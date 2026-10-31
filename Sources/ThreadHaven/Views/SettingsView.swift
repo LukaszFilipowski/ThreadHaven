@@ -98,6 +98,8 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            RemoteAccessSection()
+
             Section(String(localized: "Dictation & prompt polishing")) {
                 Picker(String(localized: "Dictation language"), selection: $dictationLocale) {
                     Text("Polski").tag("pl_PL")

@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Live status for Codex CLI sessions: an optional notify script in `~/.codex/config.toml` shows Working and Your turn, sends notifications, and lets you switch to the tab or send a prompt when Codex runs in the foreground of Terminal or iTerm2
 - Linux desktop app preview (GTK4 and libadwaita, built as a Flatpak) with recent Claude Code and Codex sessions, recent messages, token usage and resuming in a terminal
+- Remote access (preview): a web app served on 127.0.0.1 and published in your tailnet with `tailscale serve`, with per-device tokens in the Keychain, QR pairing, chat status over server-sent events, recent messages, sending prompts to foreground chats and Web Push notifications
 - Team tab in the Workspace window that shows a project's plugin marketplaces and enabled plugins, and adds a team marketplace with project scope through the claude CLI
 - Turn MCP servers and plugins on or off per project from the Workspace window, using Claude Code's documented local settings
 - Quick switcher: press ⌃⌥Space anywhere to search chats and jump to one
@@ -31,6 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Security
 
+- Text is typed into a terminal tab only after the same AppleScript confirms that Claude Code is its foreground process
 - Summaries and prompt polishing run the claude CLI without tools, MCP servers or skills, and leave no session behind
 - The hook no longer stores prompt text, and ThreadHaven files are readable only by your user account
 - Terminal and app identifiers from the environment are sanitized before they are used

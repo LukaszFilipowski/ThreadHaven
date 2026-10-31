@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161618" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ThreadHaven">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>ThreadHaven</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="icon" href="/icon-192.png">
+<link rel="stylesheet" href="/app.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<header class="bar">
+  <button id="back" class="icon-button" type="button" aria-label="Back" hidden>&#8249;</button>
+  <h1 id="heading">ThreadHaven</h1>
+  <span id="connection" class="dot" role="status" aria-label="Offline"></span>
+</header>
+
+<main>
+  <section id="pair-view" class="view" hidden>
+    <div class="card">
+      <h2>Pair this device</h2>
+      <p>On your Mac, open ThreadHaven Settings, turn on Remote access and scan the code with this phone's camera.</p>
+      <p class="muted">If you added this page to your home screen before pairing, copy the link from Settings on your Mac and paste it here.</p>
+      <form id="pair-form" class="stack">
+        <label for="pair-input">Pairing link</label>
+        <input id="pair-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" required>
+        <button type="submit" class="primary">Pair</button>
+      </form>
+      <p id="pair-message" class="error" role="alert"></p>
+    </div>
+  </section>
+
+  <section id="list-view" class="view" hidden>
+    <div class="toolbar">
+      <button id="notify" type="button" class="secondary" hidden>Turn on notifications</button>
+      <span id="notify-state" class="muted"></span>
+    </div>
+    <p id="list-error" class="error" role="alert"></p>
+    <h2 class="group" id="running-heading">Running</h2>
+    <ul id="running" class="sessions"></ul>
+    <h2 class="group" id="recent-heading">Recent</h2>
+    <ul id="recent" class="sessions"></ul>
+    <p id="empty" class="muted center" hidden>No chats yet.</p>
+    <button id="sign-out" type="button" class="link">Unpair this device</button>
+  </section>
+
+  <section id="detail-view" class="view" hidden>
+    <div class="detail-head">
+      <span id="detail-status" class="badge"></span>
+      <span id="detail-project" class="muted"></span>
+    </div>
+    <ol id="messages" class="messages" aria-live="polite"></ol>
+    <div class="dock">
+      <p id="composer-note" class="muted small"></p>
+      <form id="composer" class="composer">
+        <textarea id="prompt" rows="2" maxlength="4000" placeholder="Message" aria-label="Message"></textarea>
+        <button id="send" type="submit" class="primary">Send</button>
+      </form>
+    </div>
+  </section>
+</main>
+</body>
+</html>

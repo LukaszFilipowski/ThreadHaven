@@ -1,6 +1,6 @@
 # Remote access from a phone
 
-Status: proposal
+Status: stage 1 implemented (preview)
 
 ## Goal
 
@@ -37,6 +37,7 @@ phone (tailnet) ──HTTPS──▶ tailscale serve ──HTTP──▶ 127.0.0
 | `GET` | `/api/sessions/:id/messages` | Recent user and assistant messages |
 | `GET` | `/api/events` | Server-sent events for live status changes |
 | `POST` | `/api/sessions/:id/prompt` | Send a prompt to a running chat |
+| `GET` | `/api/push/key` | VAPID public key for subscribing |
 | `POST` | `/api/push/subscribe` | Register the device for Web Push |
 
 Not in stage 1: approving permission prompts, starting new chats, handoff, any file access. Approvals type keys into a terminal, so they wait until the prompt flow has been proven safe.
@@ -52,7 +53,11 @@ Web Push with VAPID keys generated on the Mac. iOS supports it for web apps adde
 - No endpoint runs shell commands or reads arbitrary files. Transcript text is returned as plain text and rendered without HTML in the web app, with a strict Content Security Policy.
 - Remote access is off by default and turns itself off after a configurable idle period.
 
-## Open questions
+## Decisions in stage 1
 
-- Whether to drive `tailscale serve` from the app or document the one-line command.
-- Retention and size limits for the local request log.
+- ThreadHaven shows the one-line `tailscale serve` command with a copy button and never runs Tailscale commands that change state. It only reads `tailscale status --json` and `tailscale funnel status --json`.
+- Rejected requests are counted in Settings and written to the unified log, which handles retention, instead of a separate log file.
+- The listening port is chosen at random once and reused, so the `tailscale serve` command keeps working across restarts.
+- Only the Tailscale user signed in on the Mac is accepted unless Settings list other tailnet users, and an unknown funnel state counts as a funnel.
+- A chat waiting for a permission or question answer does not accept remote prompts, so a short reply cannot approve anything.
+- Prompts starting with `!` are refused, because Claude Code runs them as shell commands without asking.
