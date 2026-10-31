@@ -27,7 +27,7 @@ struct ThreadHavenApp: App {
                 .frame(minWidth: 620, minHeight: 440)
         }
         .defaultSize(width: 760, height: 640)
-        .keyboardShortcut("w", modifiers: [.command, .shift])
+        .keyboardShortcut("i", modifiers: [.command, .shift])
 
         MenuBarExtra {
             MenuBarView()
