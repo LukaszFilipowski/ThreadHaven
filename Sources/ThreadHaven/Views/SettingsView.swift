@@ -6,6 +6,7 @@ struct SettingsView: View {
     @AppStorage(Preferences.terminalKey) private var terminal = TerminalApp.terminal.rawValue
     @AppStorage(Preferences.daysBack) private var daysBack = 14
     @AppStorage(Preferences.showBackground) private var showBackground = false
+    @AppStorage(Preferences.quickSwitcher) private var quickSwitcher = true
     @AppStorage(Preferences.notify) private var notify = true
     @AppStorage(Preferences.autoCompact) private var autoCompact = false
     @AppStorage(Preferences.compactTokens) private var compactTokens = 150_000
@@ -24,6 +25,7 @@ struct SettingsView: View {
                     Text("Show chats from the last \(daysBack) days")
                 }
                 Toggle(String(localized: "Show background sessions (claude -p, SDK)"), isOn: $showBackground)
+                Toggle(String(localized: "Quick switcher with ⌃⌥Space"), isOn: $quickSwitcher)
                 Toggle(String(localized: "Launch at login"), isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, on in
                         do {

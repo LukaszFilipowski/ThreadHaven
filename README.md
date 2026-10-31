@@ -24,7 +24,7 @@ Measure your own usage with `make stats`. The report is computed locally from `~
 ## Features
 
 - **All chats in one list.** Running chats on top, recent ones below, grouped by status, searchable by title, folder or last prompt.
-- **Instant switching.** Double-click a chat or press <kbd>⌘1</kbd>–<kbd>⌘9</kbd> to jump straight to its tab in Terminal or iTerm2.
+- **Instant switching.** Press <kbd>⌃⌥Space</kbd> anywhere to search your chats, or use <kbd>⌘1</kbd>–<kbd>⌘9</kbd> in the window, and jump straight to the right tab in Terminal or iTerm2.
 - **Notifications.** Get a notification when a chat finishes its turn or needs your approval. Clicking it opens the right tab.
 - **New chat in a folder.** <kbd>⌘N</kbd> starts `claude --continue` in any recent folder, so you pick up the previous thread right away.
 - **Context awareness.** Every chat shows how full its context window is. Send `/compact` with one click, or let ThreadHaven do it automatically above a threshold you choose.
