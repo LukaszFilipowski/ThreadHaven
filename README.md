@@ -101,6 +101,22 @@ See [SECURITY.md](SECURITY.md) for details and how to report a vulnerability.
 
 Open **Settings → Notifications** and click **Remove** next to the hook, then delete `ThreadHaven.app` and `~/.threadhaven`.
 
+## Linux
+
+Status: preview. The Linux app is a GTK4 and libadwaita app built with [Adwaita for Swift](https://git.aparoksha.dev/aparoksha/adwaita-swift). It lists your Claude Code and Codex CLI sessions from the last 14 days with their project and context usage, shows recent messages and token usage of a session, and resumes a session in your terminal. Live status, notifications and the hook are macOS only for now.
+
+The Flatpak reads `~/.claude` and `~/.codex` read-only and uses `flatpak-spawn --host` only to open a terminal (`xdg-terminal-exec`, `kgx`, `gnome-terminal`, `konsole` or `x-terminal-emulator`) that runs `claude --resume` or `codex resume`.
+
+Every CI run builds a `ThreadHaven.flatpak` bundle you can download from the run's artifacts. To build it yourself, install `flatpak-builder` and run:
+
+```sh
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak-builder --user --install-deps-from=flathub --force-clean --install build-dir linux/app.threadhaven.ThreadHaven.yml
+flatpak run app.threadhaven.ThreadHaven
+```
+
+The build needs network access to fetch Swift packages, so it is not ready for Flathub yet.
+
 ## Development
 
 ```sh
