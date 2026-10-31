@@ -1,0 +1,73 @@
+import ServiceManagement
+import SwiftUI
+
+struct SettingsView: View {
+    @Environment(SessionStore.self) private var store
+    @AppStorage(Preferences.terminalKey) private var terminal = TerminalApp.terminal.rawValue
+    @AppStorage(Preferences.daysBack) private var daysBack = 14
+    @AppStorage(Preferences.showBackground) private var showBackground = false
+    @AppStorage(Preferences.notify) private var notify = true
+    @AppStorage(Preferences.autoCompact) private var autoCompact = false
+    @AppStorage(Preferences.compactThreshold) private var compactThreshold = 70.0
+    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+
+    var body: some View {
+        Form {
+            Section(String(localized: "General")) {
+                Picker(String(localized: "Terminal for new chats"), selection: $terminal) {
+                    ForEach(TerminalApp.allCases) { Text($0.name).tag($0.rawValue) }
+                }
+                Stepper(value: $daysBack, in: 1...90) {
+                    Text("Show chats from the last \(daysBack) days")
+                }
+                Toggle(String(localized: "Show background sessions (claude -p, SDK)"), isOn: $showBackground)
+                Toggle(String(localized: "Launch at login"), isOn: $launchAtLogin)
+                    .onChange(of: launchAtLogin) { _, on in
+                        do {
+                            if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+                        } catch {
+                            launchAtLogin = SMAppService.mainApp.status == .enabled
+                        }
+                    }
+            }
+
+            Section(String(localized: "Notifications")) {
+                Toggle(String(localized: "Notify when a chat finishes or needs approval"), isOn: $notify)
+                LabeledContent(String(localized: "Claude Code hook")) {
+                    if store.hooksInstalled {
+                        HStack {
+                            Label(String(localized: "Installed"), systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                            Button(String(localized: "Remove")) { store.uninstallHooks() }
+                        }
+                    } else {
+                        Button(String(localized: "Install")) { store.installHooks() }
+                    }
+                }
+                if let err = store.lastError {
+                    Text(err).font(.caption).foregroundStyle(.red)
+                }
+            }
+
+            Section {
+                Toggle(String(localized: "Auto-compact long chats"), isOn: $autoCompact)
+                HStack {
+                    Slider(value: $compactThreshold, in: 40...95, step: 5) {
+                        Text("Threshold")
+                    }
+                    Text("\(Int(compactThreshold))%").monospacedDigit().frame(width: 44, alignment: .trailing)
+                }
+                .disabled(!autoCompact)
+            } header: {
+                Text("Context")
+            } footer: {
+                Text("When a running chat finishes a turn above the threshold, ThreadHaven sends /compact to it. Only for chats in Terminal or iTerm2.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+        }
+        .formStyle(.grouped)
+        .frame(width: 520)
+        .padding(.vertical, 8)
+    }
+}
