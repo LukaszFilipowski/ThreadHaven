@@ -30,7 +30,7 @@ Measure your own usage with `make stats`. The report is computed locally from `~
 - **Context awareness.** Every chat shows how full its context window is. Send `/compact` with one click, or let ThreadHaven do it automatically above a threshold you choose.
 - **Project knowledge.** CLAUDE.md, memory and handoff notes of a project side by side in the Workspace window, with a preview and a fresh chat from any note.
 - **Team marketplaces.** See which plugin marketplaces and plugins a project shares with your team, and add a team marketplace to its `.claude/settings.json` in a click.
-- **Codex CLI sessions.** Recent OpenAI Codex CLI sessions from `~/.codex/sessions` show up next to your Claude Code chats with a small badge, read-only. Resume one with `codex resume` in a click.
+- **Codex CLI sessions.** Recent OpenAI Codex CLI sessions from `~/.codex/sessions` show up next to your Claude Code chats with a small badge. Resume one with `codex resume` in a click. With the optional Codex notify script, running sessions show Working or Your turn, send notifications, and you can switch to their tab or send a prompt from ThreadHaven.
 - **Dictation.** Dictate prompts with on-device speech recognition, then turn a rough note into a clean prompt with one click (uses your own `claude` CLI).
 - **Native and small.** SwiftUI, a universal binary under 3 MB, light and dark mode, English and Polish.
 
@@ -69,8 +69,11 @@ ThreadHaven combines these read-only sources:
 | Transcripts | `~/.claude/projects/**/*.jsonl` | Titles, folders, messages, context usage |
 | Hook events | `~/.threadhaven/events.jsonl` | Live status, notifications, terminal tab |
 | Codex CLI sessions | `~/.codex/sessions/**/rollout-*.jsonl` | Titles, folders, messages, context usage |
+| Codex notify events | `~/.threadhaven/events.jsonl` | Live status and notifications for Codex CLI |
 
 The hook is a tiny POSIX shell script (`~/.threadhaven/hook.sh`) registered for `SessionStart`, `UserPromptSubmit`, `PostToolUse`, `Notification`, `Stop` and `SessionEnd`. It appends one JSON line per event together with the terminal and TTY of the session, and rotates the file at 5 MB.
+
+For Codex CLI, **Settings → Notifications → Codex CLI notify** sets the top-level `notify` key in `~/.codex/config.toml` to `~/.threadhaven/codex-notify.sh`. Codex runs it after every turn, and it appends one line with the session id, folder, last reply and terminal, never your prompts. Only that line of the file changes, and the original is backed up once to `config.toml.threadhaven-backup`. If `notify` already runs another program, ThreadHaven leaves it alone; call `~/.threadhaven/codex-notify.sh` from your program with the same JSON argument to use both. Codex reports only finished turns, so there is no approval status for Codex sessions.
 
 Switching tabs and sending prompts use AppleScript, so macOS will ask once for permission to control your terminal.
 
@@ -99,7 +102,7 @@ See [SECURITY.md](SECURITY.md) for details and how to report a vulnerability.
 
 ## Uninstall
 
-Open **Settings → Notifications** and click **Remove** next to the hook, then delete `ThreadHaven.app` and `~/.threadhaven`.
+Open **Settings → Notifications** and click **Remove** next to the hook (and next to Codex CLI notify if you installed it), then delete `ThreadHaven.app` and `~/.threadhaven`.
 
 ## Development
 

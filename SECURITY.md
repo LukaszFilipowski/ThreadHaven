@@ -19,6 +19,7 @@ Only the latest release receives security fixes.
   - `~/.claude/settings.json` when you install or remove the hook. The original is backed up once to `settings.json.threadhaven-backup`, and other hooks are left untouched.
   - A project's `.claude/settings.local.json` when you switch an MCP server off or on for that project.
   - Plugin and marketplace settings through the official `claude plugin` commands when you switch a plugin per project or add a team marketplace. Adding a team marketplace writes the project's `.claude/settings.json`, which your teammates receive through git.
+- `~/.codex/config.toml` changes only when you install or remove the Codex notify script, and only its top-level `notify` line. The rest of the file is kept byte for byte, the original is backed up once to `config.toml.threadhaven-backup`, and a `notify` setting that runs another program is never replaced. Codex sessions in `~/.codex/sessions` are only read. The notify script stores the session id, folder and last reply, never your prompts.
 - Prompt polishing and handoff notes run your local `claude` CLI with tools, MCP servers, skills and session persistence disabled, so text from a transcript cannot make it run commands. A new chat started from a handoff note is asked to review the note and wait for your confirmation.
-- Text is sent to a terminal only for chats whose Claude Code process runs in the foreground of that terminal.
+- Text is sent to a terminal only for chats whose Claude Code or Codex CLI process runs in the foreground of that terminal.
 - Release builds are produced by GitHub Actions with pinned actions, read-only CI permissions and secrets scoped to the steps that need them.

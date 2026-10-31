@@ -36,5 +36,5 @@ A first measurement shows that files on disk (CLAUDE.md, memory, skill descripti
 
 ## Later
 
-- Live status for Codex CLI sessions
+- ~~Live status for Codex CLI sessions~~ (done)
 - Signed and notarized releases distributed through a Homebrew cask
