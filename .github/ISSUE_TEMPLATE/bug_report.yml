@@ -1,0 +1,48 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What did you do, what did you expect and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a chat in Terminal
+        2. Click Hand Off
+        3. …
+  - type: input
+    id: version
+    attributes:
+      label: ThreadHaven version
+      placeholder: 0.2.0
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "26.1"
+    validations:
+      required: true
+  - type: input
+    id: claude
+    attributes:
+      label: Claude Code version and install method
+      placeholder: 2.1.0, native installer
+  - type: dropdown
+    id: terminal
+    attributes:
+      label: Terminal
+      options: [Terminal, iTerm2, Ghostty, Other]
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Please remove prompts, paths, names and any other private data before posting.
