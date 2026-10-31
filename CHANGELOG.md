@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - A warning before continuing a large chat whose prompt cache has expired
 - `threadhaven-stats` (`make stats`): a local report of context usage, cold cache rebuilds and simulated compaction savings
 - `ThreadHavenCore`, a Foundation-only library with the token analytics
+- `ThreadHavenCore` and `threadhaven-stats` build and pass their tests on Linux
 - Per-session token analytics: context growth, cache usage, cold cache rebuilds and heaviest tool results
 - Read-only workspace inventory of CLAUDE.md files, memory, skills, commands, agents, MCP servers and plugins with estimated startup tokens
 - Workspace window (⇧⌘W) that shows what every chat in a project starts with and compares it with the measured start-up context

@@ -18,3 +18,13 @@ jobs:
       - run: swift build
       - run: swift test
       - run: make app
+
+  linux:
+    runs-on: ubuntu-latest
+    container: swift:6.1.2@sha256:9096456b6dd5f3dcb1f64152601de3d96f40e48ac98354fefa9ffa9abf2dd6bf
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - run: swift build --product threadhaven-stats
+      - run: swift test

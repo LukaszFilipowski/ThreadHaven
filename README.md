@@ -105,6 +105,8 @@ make test
 make app
 ```
 
+On Linux, `swift build --product threadhaven-stats` builds the stats command and `swift test` runs the core tests.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and the release process, and [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
 
 ## Roadmap
