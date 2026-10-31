@@ -1,30 +1,33 @@
 import Foundation
 
-struct TokenStats: Sendable, Equatable {
-    struct ToolResult: Sendable, Equatable {
-        let tool: String
-        let label: String?
-        let tokens: Int
+public struct TokenStats: Sendable, Equatable {
+    public struct ToolResult: Sendable, Equatable {
+        public let tool: String
+        public let label: String?
+        public let tokens: Int
     }
 
-    static let coldRebuildMinimumTokens = 20_000
-    static let coldRebuildContextShare = 0.5
-    static let heaviestToolResultLimit = 5
-    static let bytesPerToken = 4
+    public static let coldRebuildMinimumTokens = 20_000
+    public static let coldRebuildContextShare = 0.5
+    public static let heaviestToolResultLimit = 5
+    public static let bytesPerToken = 4
 
-    var turns = 0
-    var baselineContext = 0
-    var currentContext = 0
-    var peakContext = 0
-    var cacheReadTokens = 0
-    var cacheWriteTokens = 0
-    var outputTokens = 0
-    var coldRebuilds = 0
-    var coldRebuildTokens = 0
-    var heaviestToolResults: [ToolResult] = []
-    var lastReply: Date?
+    public var turns = 0
+    public var baselineContext = 0
+    public var currentContext = 0
+    public var peakContext = 0
+    public var cacheReadTokens = 0
+    public var cacheWriteTokens = 0
+    public var outputTokens = 0
+    public var coldRebuilds = 0
+    public var coldRebuildTokens = 0
+    public var heaviestToolResults: [ToolResult] = []
+    public var lastReply: Date?
+    public var contexts: [Int] = []
 
-    static func analyze(url: URL) -> TokenStats {
+    public init() {}
+
+    public static func analyze(url: URL) -> TokenStats {
         var tally = Tally()
         forEachLine(of: url) { line in
             autoreleasepool { tally.consume(line) }
@@ -123,6 +126,7 @@ private struct Tally {
         }
         stats.turns += 1
         stats.currentContext = context
+        stats.contexts.append(context)
         stats.peakContext = max(stats.peakContext, context)
         stats.cacheReadTokens += cacheRead
         stats.cacheWriteTokens += cacheWrite

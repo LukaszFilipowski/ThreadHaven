@@ -4,6 +4,23 @@ A lightweight native macOS app for keeping track of your Claude Code chats.
 
 ThreadHaven lists every Claude Code session on your Mac, tells you which ones are working, waiting for your approval or done, and takes you to the right terminal tab in one click. It lives in your menu bar and a small window, and it never touches your transcripts.
 
+## Why it saves tokens
+
+Every reply re-reads the whole conversation, so the size of a chat matters more than the length of your prompts. Letting chats grow, or coming back to a big chat after its prompt cache expired, quietly multiplies what each reply costs against your plan.
+
+Measured with `make stats` on one developer's interactive Claude Code sessions over 14 days (47 sessions, 19,149 replies):
+
+| Measure | Result |
+| --- | --- |
+| Average context per reply | 412k tokens |
+| Context before the first prompt (median) | 49k tokens |
+| Cache writes caused by returning to a cold chat | 78% |
+| Context processed if chats were compacted at 150k (simulated) | 74% less, about 3.8× more replies for the same volume |
+
+How to read this: the numbers measure context volume, which drives API cost and usage limits. Anthropic does not publish exactly how cached tokens count toward subscription limits, so treat the factor as what compaction can give at most, not as a guarantee. The simulation restarts each compacted chat from its first-reply context plus a 20k summary and counts the context read by the compaction itself. Compaction keeps a summary, not every detail.
+
+Measure your own usage with `make stats`. The report is computed locally from `~/.claude/projects` and never leaves your Mac.
+
 ## Features
 
 - **All chats in one list.** Running chats on top, recent ones below, grouped by status, searchable by title, folder or last prompt.
