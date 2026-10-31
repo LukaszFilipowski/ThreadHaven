@@ -14,7 +14,9 @@ Long chats are where most tokens go. Each turn re-reads the whole context, and c
 
 ## 0.3 · Workspace
 
-- A breakdown of the context every session starts with: CLAUDE.md files, memory, skills, MCP servers and plugins, with their weight in tokens
+A first measurement shows that files on disk (CLAUDE.md, memory, skill descriptions) are only a small part of the context a session starts with. Most of it is the system prompt, built-in tool definitions and the tools of connected MCP servers, so the biggest wins come from turning off servers and connectors a project does not need.
+
+- A breakdown of the context every session starts with, measured from the first reply and split into what is on disk and what comes from tools and MCP servers
 - Turning skills, MCP servers and plugins on and off per project
 - A knowledge base per project that keeps CLAUDE.md, memory and handoff notes together
 
