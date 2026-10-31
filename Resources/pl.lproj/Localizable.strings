@@ -123,3 +123,4 @@
 "Jump to a chat" = "Przejdź do czatu";
 "No matching chats" = "Brak pasujących czatów";
 "Quick switcher with ⌃⌥Space" = "Szybkie przełączanie skrótem ⌃⌥Spacja";
+"Unexpected format of %@ in the project's settings.local.json. Nothing was changed." = "Nieoczekiwany format %@ w settings.local.json projektu. Nic nie zostało zmienione.";
