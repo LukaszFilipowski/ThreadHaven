@@ -10,6 +10,12 @@ enum Preferences {
     static let handoffModel = "handoffModel"
     static let polishModel = "polishModel"
     static let quickSwitcher = "quickSwitcher"
+    static let remoteEnabled = "remoteEnabled"
+    static let remotePort = "remotePort"
+    static let remoteIdleHours = "remoteIdleHours"
+    static let remotePreviews = "remotePreviews"
+    static let remoteAllowlist = "remoteAllowlist"
+    static let remoteDeviceCounter = "remoteDeviceCounter"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
@@ -22,6 +28,10 @@ enum Preferences {
             handoffModel: "haiku",
             polishModel: "haiku",
             quickSwitcher: true,
+            remoteEnabled: false,
+            remoteIdleHours: 8,
+            remotePreviews: false,
+            remoteAllowlist: "",
         ])
     }
 

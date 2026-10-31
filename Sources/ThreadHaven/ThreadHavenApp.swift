@@ -3,12 +3,14 @@ import SwiftUI
 @main
 struct ThreadHavenApp: App {
     @State private var store: SessionStore
+    @State private var remote: RemoteAccess
     @AppStorage(Preferences.showBackground) private var showBackground = false
     private let switcher: QuickSwitcher
 
     init() {
         let store = SessionStore()
         _store = State(initialValue: store)
+        _remote = State(initialValue: RemoteAccess(store: store))
         switcher = QuickSwitcher(store: store)
     }
 
@@ -47,6 +49,7 @@ struct ThreadHavenApp: App {
         Settings {
             SettingsView()
                 .environment(store)
+                .environment(remote)
         }
     }
 }
