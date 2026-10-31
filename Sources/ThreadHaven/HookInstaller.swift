@@ -3,11 +3,14 @@ import Foundation
 enum HookInstaller {
     enum Failure: LocalizedError {
         case unexpectedFormat(String)
+        case untrustedFolder(String)
 
         var errorDescription: String? {
             switch self {
             case .unexpectedFormat(let key):
                 String(localized: "Unexpected format of \(key) in ~/.claude/settings.json. Nothing was changed.")
+            case .untrustedFolder(let path):
+                String(localized: "\(path) is not a folder owned by you, so ThreadHaven will not use it.")
             }
         }
     }
@@ -23,19 +26,28 @@ enum HookInstaller {
 
     static let script = #"""
     #!/bin/sh
+    umask 077
     d="$HOME/.threadhaven"
     f="$d/events.jsonl"
     p=$(cat | tr -d '\n')
     [ -z "$p" ] && exit 0
     mkdir -p "$d"
+    field() {
+      printf '%s' "$p" | head -c 4000 | sed -n "s/.*\"$1\" *: *\"\([^\"]*\)\".*/\1/p"
+    }
+    clean() {
+      printf '%s' "$1" | tr -cd 'A-Za-z0-9._-'
+    }
     case "$p" in
       *'"hook_event_name":"PostToolUse"'*|*'"hook_event_name": "PostToolUse"'*)
-        sid=$(printf '%s' "$p" | head -c 600 | sed -n 's/.*"session_id" *: *"\([^"]*\)".*/\1/p')
-        p="{\"session_id\":\"$sid\",\"hook_event_name\":\"PostToolUse\"}"
+        p="{\"session_id\":\"$(field session_id)\",\"hook_event_name\":\"PostToolUse\"}"
+        ;;
+      *'"hook_event_name":"UserPromptSubmit"'*|*'"hook_event_name": "UserPromptSubmit"'*)
+        p="{\"session_id\":\"$(field session_id)\",\"hook_event_name\":\"UserPromptSubmit\",\"cwd\":\"$(field cwd)\",\"transcript_path\":\"$(field transcript_path)\"}"
         ;;
     esac
-    t=$(ps -o tty= -p $PPID 2>/dev/null | tr -d ' ')
-    printf '{"ts":%s,"term":"%s","bundle":"%s","tty":"%s","event":%s}\n' "$(date +%s)" "${TERM_PROGRAM:-}" "${__CFBundleIdentifier:-}" "$t" "$p" |
+    t=$(clean "$(ps -o tty= -p $PPID 2>/dev/null)")
+    printf '{"ts":%s,"term":"%s","bundle":"%s","tty":"%s","event":%s}\n' "$(date +%s)" "$(clean "${TERM_PROGRAM:-}")" "$(clean "${__CFBundleIdentifier:-}")" "$t" "$p" |
       /usr/bin/lockf -k -t 2 "$d/.lock" /bin/sh -c '
         s=$(stat -f%z "$1" 2>/dev/null || echo 0)
         [ "$s" -gt 5000000 ] && mv -f "$1" "$1.1"
@@ -45,15 +57,32 @@ enum HookInstaller {
     """#
 
     static func writeScript() throws {
-        try FileManager.default.createDirectory(at: supportDir, withIntermediateDirectories: true)
+        let fm = FileManager.default
+        try secureDirectory(supportDir)
         let current = try? String(contentsOf: hookURL, encoding: .utf8)
         if current != script {
             try script.write(to: hookURL, atomically: true, encoding: .utf8)
         }
-        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: hookURL.path)
-        if !FileManager.default.fileExists(atPath: eventsURL.path) {
-            FileManager.default.createFile(atPath: eventsURL.path, contents: nil)
+        try fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: hookURL.path)
+        if !fm.fileExists(atPath: eventsURL.path) {
+            fm.createFile(atPath: eventsURL.path, contents: nil, attributes: [.posixPermissions: 0o600])
         }
+        for file in [eventsURL, eventsURL.appendingPathExtension("1")] where fm.fileExists(atPath: file.path) {
+            try fm.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
+        }
+    }
+
+    static func secureDirectory(_ url: URL) throws {
+        let fm = FileManager.default
+        if let attributes = try? fm.attributesOfItem(atPath: url.path) {
+            guard attributes[.type] as? FileAttributeType == .typeDirectory,
+                  (attributes[.ownerAccountID] as? NSNumber)?.uint32Value == getuid() else {
+                throw Failure.untrustedFolder(url.path)
+            }
+        } else {
+            try fm.createDirectory(at: url, withIntermediateDirectories: true)
+        }
+        try fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: url.path)
     }
 
     static var isInstalled: Bool {
