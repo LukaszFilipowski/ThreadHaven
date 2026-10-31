@@ -17,6 +17,7 @@ enum Preferences {
     static let remoteAllowlist = "remoteAllowlist"
     static let remoteDeviceCounter = "remoteDeviceCounter"
     static let remotePushContact = "remotePushContact"
+    static let remoteSignOutOnQuit = "remoteSignOutOnQuit"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
@@ -33,6 +34,7 @@ enum Preferences {
             remoteIdleHours: 8,
             remotePreviews: false,
             remoteAllowlist: "",
+            remoteSignOutOnQuit: false,
         ])
     }
 

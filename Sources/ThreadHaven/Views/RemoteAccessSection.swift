@@ -7,6 +7,7 @@ struct RemoteAccessSection: View {
     @AppStorage(Preferences.remotePreviews) private var previews = false
     @AppStorage(Preferences.remoteAllowlist) private var allowlist = ""
     @AppStorage(Preferences.remotePushContact) private var pushContact = ""
+    @AppStorage(Preferences.remoteSignOutOnQuit) private var signOutOnQuit = false
 
     var body: some View {
         Section {
@@ -89,6 +90,7 @@ struct RemoteAccessSection: View {
             Text("8 hours").tag(8)
             Text("24 hours").tag(24)
         }
+        Toggle(String(localized: "Sign out phones when ThreadHaven quits"), isOn: $signOutOnQuit)
         Toggle(String(localized: "Show message text in phone notifications"), isOn: $previews)
         TextField(String(localized: "Allowed Tailscale users"), text: $allowlist, prompt: Text("Only you"))
             .onChange(of: allowlist) { _, value in remote.applyAllowlist(value) }

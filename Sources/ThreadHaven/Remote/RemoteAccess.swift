@@ -1,3 +1,4 @@
+import AppKit
 import CryptoKit
 import Foundation
 import Observation
@@ -25,6 +26,7 @@ final class RemoteAccess {
     private(set) var pairing: Pairing?
     private(set) var webAppAvailable = false
     private(set) var allowedLogins: [String] = []
+    private(set) var paused = false
 
     @ObservationIgnored private let store: SessionStore
     @ObservationIgnored private let auth: RemoteAuthenticator
@@ -56,7 +58,14 @@ final class RemoteAccess {
             router.staticFiles = RemoteRouter.loadStaticFiles(from: directory)
         }
         webAppAvailable = router.staticFiles["/"] != nil
+        if defaults.bool(forKey: Preferences.remoteSignOutOnQuit) && !auth.devices.isEmpty {
+            auth.revokeAll()
+            defaults.set(false, forKey: Preferences.remoteEnabled)
+        }
         syncDevices()
+        NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.quitting() }
+        }
         if defaults.bool(forKey: Preferences.remoteEnabled) { enable() }
     }
 
@@ -210,12 +219,44 @@ final class RemoteAccess {
         if probe.serve.funneled {
             disable(reason: String(localized: "Remote access was turned off because Tailscale Funnel exposes its port to the internet."))
         } else if probe.funnelUnknown {
-            disable(reason: String(localized: "Remote access was turned off because ThreadHaven could not check Tailscale Funnel."))
+            pause()
         } else if let port {
             auth.ownLogin = probe.login
             syncDevices()
             router.allowedHosts = RemoteRouter.allowedHosts(dnsName: probe.dnsName, port: port)
+            if paused { resume(port: port) }
         }
+    }
+
+    private func pause() {
+        guard !paused else { return }
+        paused = true
+        server.stop()
+        for connection in streams.values { connection.close() }
+        streams.removeAll()
+        problem = String(localized: "Remote access is paused because ThreadHaven could not check Tailscale Funnel. It resumes when the check succeeds.")
+    }
+
+    private func resume(port: UInt16) {
+        server.start(port: port) { [weak self] result in
+            Task { @MainActor in self?.resumed(result, port: port) }
+        }
+    }
+
+    private func resumed(_ result: Result<UInt16, Error>, port: UInt16) {
+        guard paused, self.port == port else { return }
+        switch result {
+        case .success:
+            paused = false
+            problem = nil
+        case .failure:
+            defaults.removeObject(forKey: Preferences.remotePort)
+            disable(reason: String(localized: "Port \(Int(port)) is used by another app. Remote access was turned off and every device was signed out. Turn it on again to use a new port, then run the new tailscale serve command."))
+        }
+    }
+
+    private func quitting() {
+        if isEnabled && defaults.bool(forKey: Preferences.remoteSignOutOnQuit) { disable() }
     }
 
     private func loadVAPIDKey() {
