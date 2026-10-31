@@ -72,7 +72,7 @@ struct ContentView: View {
                 } label: {
                     Label(String(localized: "Workspace"), systemImage: "square.stack.3d.up")
                 }
-                .help(String(localized: "What every chat in a project starts with (⇧⌘W)"))
+                .help(String(localized: "What every chat in a project starts with (⇧⌘I)"))
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
