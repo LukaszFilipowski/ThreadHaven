@@ -166,3 +166,33 @@ struct WorkspaceInventoryTests {
         #expect(WorkspaceInventory.scan(project: project, home: home).isEmpty)
     }
 }
+
+struct InventoryGroupingTests {
+    private func item(_ kind: InventoryItem.Kind, _ name: String, tokens: Int?, enabled: Bool? = true) -> InventoryItem {
+        InventoryItem(kind: kind, name: name, scope: .user, path: "/tmp/\(name)", enabled: enabled, estimatedTokens: tokens)
+    }
+
+    @Test func groupsFollowKindOrderAndSortByTokens() {
+        let groups = WorkspaceInventory.grouped([
+            item(.mcpServer, "beta", tokens: nil),
+            item(.skill, "small", tokens: 10),
+            item(.claudeMd, "CLAUDE.md", tokens: 300),
+            item(.skill, "unknown", tokens: nil),
+            item(.skill, "large", tokens: 90),
+            item(.skill, "alpha", tokens: 10),
+            item(.mcpServer, "alpha", tokens: nil),
+        ])
+        #expect(groups.map(\.kind) == [.claudeMd, .skill, .mcpServer])
+        #expect(groups[1].items.map(\.name) == ["large", "alpha", "small", "unknown"])
+        #expect(groups[2].items.map(\.name) == ["alpha", "beta"])
+    }
+
+    @Test func groupTotalsSkipDisabledItems() {
+        let groups = WorkspaceInventory.grouped([
+            item(.command, "on", tokens: 40),
+            item(.command, "off", tokens: 25, enabled: false),
+            item(.command, "default", tokens: 5, enabled: nil),
+        ])
+        #expect(groups.first?.tokens == 45)
+    }
+}
