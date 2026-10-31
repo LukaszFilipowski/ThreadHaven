@@ -8,6 +8,8 @@
 	<string>ThreadHaven</string>
 	<key>CFBundleExecutable</key>
 	<string>ThreadHaven</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>app.threadhaven.ThreadHaven</string>
 	<key>CFBundleInfoDictionaryVersion</key>
