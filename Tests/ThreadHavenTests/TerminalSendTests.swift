@@ -7,7 +7,7 @@ struct TerminalSendTests {
         let check = try #require(script.range(of: "set n to last item of p"))
         let type = try #require(script.range(of: #"do script "Run the \"tests\"" in t"#))
         #expect(check.upperBound < type.lowerBound)
-        #expect(script.contains(#"if n is not in {"claude", "node", "codex"}"#))
+        #expect(script.contains(#"if n is not in {"claude", "node"} and (character 1 of n is not in "0123456789" or n does not contain ".") then return false"#))
         #expect(script.contains(#"if tty of t is "/dev/ttys005""#))
     }
 

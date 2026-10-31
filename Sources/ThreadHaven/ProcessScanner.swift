@@ -2,16 +2,25 @@ import Foundation
 
 enum ProcessScanner {
     static func claudeTTYs() -> Set<String> {
+        ttys(fromPSOutput: ps(["-axo", "tty=,stat=,args="]))
+    }
+
+    static func isClaudeInForeground(tty: String) -> Bool {
+        guard !tty.isEmpty, tty.allSatisfy({ $0.isLetter || $0.isNumber }) else { return false }
+        return ttys(fromPSOutput: ps(["-o", "tty=,stat=,args=", "-t", tty])).contains(tty)
+    }
+
+    private static func ps(_ arguments: [String]) -> String {
         let process = Process()
         let pipe = Pipe()
         process.executableURL = URL(fileURLWithPath: "/bin/ps")
-        process.arguments = ["-axo", "tty=,stat=,args="]
+        process.arguments = arguments
         process.standardOutput = pipe
         process.standardError = FileHandle.nullDevice
-        guard (try? process.run()) != nil else { return [] }
+        guard (try? process.run()) != nil else { return "" }
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
-        return ttys(fromPSOutput: String(decoding: data, as: UTF8.self))
+        return String(decoding: data, as: UTF8.self)
     }
 
     static func ttys(fromPSOutput output: String) -> Set<String> {

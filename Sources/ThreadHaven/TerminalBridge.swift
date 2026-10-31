@@ -96,17 +96,17 @@ enum TerminalBridge {
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
             .joined(separator: " ")
-        guard let source = sendScript(flat, app: app, tty: tty) else { return false }
+        guard let source = sendScript(flat, app: app, tty: tty), ProcessScanner.isClaudeInForeground(tty: tty) else { return false }
         return run(source)
     }
 
-    static let agentProcessNames = ["claude", "node", "codex"]
+    static let agentProcessNames = ["claude", "node"]
 
-    private static var foregroundCheck: String {
+    private static var foregroundScript: String {
         let names = agentProcessNames.map { "\"\($0)\"" }.joined(separator: ", ")
         return """
         if n is "" then return false
-                        if n is not in {\(names)} and character 1 of n is not in "0123456789" then return false
+                        if n is not in {\(names)} and (character 1 of n is not in "0123456789" or n does not contain ".") then return false
         """
     }
 
@@ -124,7 +124,7 @@ enum TerminalBridge {
                             set p to processes of t
                             if (count of p) is 0 then return false
                             set n to last item of p
-                            \(foregroundCheck)
+                            \(foregroundScript)
                             do script "\(body)" in t
                             return true
                         end if
@@ -142,7 +142,7 @@ enum TerminalBridge {
                             if tty of s is "\(dev)" then
                                 tell s to set n to (variable named "jobName")
                                 if n is missing value then return false
-                                \(foregroundCheck)
+                                \(foregroundScript)
                                 tell s to write text "\(body)"
                                 return true
                             end if
