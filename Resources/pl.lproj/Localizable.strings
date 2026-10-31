@@ -120,3 +120,6 @@
 "Plugins" = "Pluginy";
 "User" = "Użytkownik";
 "Plugin" = "Plugin";
+"Jump to a chat" = "Przejdź do czatu";
+"No matching chats" = "Brak pasujących czatów";
+"Quick switcher with ⌃⌥Space" = "Szybkie przełączanie skrótem ⌃⌥Spacja";

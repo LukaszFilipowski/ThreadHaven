@@ -9,6 +9,7 @@ enum Preferences {
     static let compactTokens = "compactTokens"
     static let handoffModel = "handoffModel"
     static let polishModel = "polishModel"
+    static let quickSwitcher = "quickSwitcher"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
@@ -20,6 +21,7 @@ enum Preferences {
             compactTokens: 150_000,
             handoffModel: "haiku",
             polishModel: "haiku",
+            quickSwitcher: true,
         ])
     }
 

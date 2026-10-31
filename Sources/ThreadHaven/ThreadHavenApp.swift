@@ -2,8 +2,15 @@ import SwiftUI
 
 @main
 struct ThreadHavenApp: App {
-    @State private var store = SessionStore()
+    @State private var store: SessionStore
     @AppStorage(Preferences.showBackground) private var showBackground = false
+    private let switcher: QuickSwitcher
+
+    init() {
+        let store = SessionStore()
+        _store = State(initialValue: store)
+        switcher = QuickSwitcher(store: store)
+    }
 
     var body: some Scene {
         Window("ThreadHaven", id: "main") {
