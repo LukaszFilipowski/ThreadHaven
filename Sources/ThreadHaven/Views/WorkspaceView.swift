@@ -8,6 +8,7 @@ struct WorkspaceView: View {
     @State private var choseDefault = false
     @State private var tab = Tab.inventory
     @State private var refreshID = UUID()
+    @State private var toggleMessage: String?
 
     enum Tab: Hashable {
         case inventory
@@ -81,11 +82,21 @@ struct WorkspaceView: View {
                 hasProject: project != nil
             )
             .padding(16)
+            if let toggleMessage {
+                Label(toggleMessage, systemImage: "info.circle")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 10)
+            }
             Divider()
             List {
                 ForEach(groups) { group in
                     Section {
-                        ForEach(group.items) { InventoryRow(item: $0) }
+                        ForEach(group.items) { item in
+                            InventoryRow(item: item, onToggle: toggleAction(for: item))
+                        }
                     } header: {
                         HStack {
                             Label(group.kind.title, systemImage: group.kind.symbol)
@@ -115,6 +126,29 @@ struct WorkspaceView: View {
         return store.sessions
             .filter { $0.cwd == project && $0.meta?.baselineContext != nil }
             .max { $0.lastActivity < $1.lastActivity }
+    }
+
+    private func toggleAction(for item: InventoryItem) -> ((Bool) -> Void)? {
+        guard let project, item.kind == .plugin || (item.kind == .mcpServer && item.scope != .plugin) else { return nil }
+        let url = URL(fileURLWithPath: project, isDirectory: true)
+        return { enabled in Task { await setEnabled(item, enabled, in: url) } }
+    }
+
+    private func setEnabled(_ item: InventoryItem, _ enabled: Bool, in project: URL) async {
+        do {
+            if item.kind == .plugin {
+                try await ProjectSettings.setPlugin(item.name, enabled: enabled, project: project)
+            } else {
+                let fromMcpJson = item.path.hasSuffix(".mcp.json")
+                try await Task.detached {
+                    try ProjectSettings.setServer(item.name, fromMcpJson: fromMcpJson, enabled: enabled, project: project)
+                }.value
+            }
+            toggleMessage = String(localized: "Saved for this project. New chats here pick it up; restart running ones.")
+            await scan()
+        } catch {
+            toggleMessage = error.localizedDescription
+        }
     }
 
     private func scan() async {
@@ -190,6 +224,7 @@ struct StartupBar: View {
 
 struct InventoryRow: View {
     let item: InventoryItem
+    var onToggle: ((Bool) -> Void)?
 
     var body: some View {
         HStack(spacing: 12) {
@@ -203,9 +238,19 @@ struct InventoryRow: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            state
-                .font(.caption)
-                .frame(width: 130, alignment: .leading)
+            Group {
+                if let onToggle {
+                    Toggle(String(localized: "On for this project"), isOn: Binding(get: { item.enabled != false }, set: onToggle))
+                        .toggleStyle(.switch)
+                        .controlSize(.mini)
+                        .labelsHidden()
+                        .help(String(localized: "On for this project"))
+                } else {
+                    state
+                }
+            }
+            .font(.caption)
+            .frame(width: 130, alignment: .leading)
             Group {
                 if let tokens = item.estimatedTokens {
                     Text(tokens, format: .number)

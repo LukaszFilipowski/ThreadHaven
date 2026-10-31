@@ -203,7 +203,7 @@ enum WorkspaceInventory {
         settings: [String: Any],
         project: URL?
     ) -> [InventoryItem] {
-        let disabled = Set(strings(projectConfig["disabledMcpServers"]))
+        let disabled = Set(strings(projectConfig["disabledMcpServers"])).union(ProjectSettings.disabledServers(in: settings))
         var items = serverNames(config["mcpServers"]).map {
             InventoryItem(kind: .mcpServer, name: $0, scope: .user, path: configPath, enabled: !disabled.contains($0))
         }
@@ -251,6 +251,10 @@ enum WorkspaceInventory {
         if let project {
             files.append(project.appendingPathComponent(".claude/settings.json"))
             files.append(project.appendingPathComponent(".claude/settings.local.json"))
+            let local = ProjectSettings.localSettingsURL(for: project)
+            if local.standardizedFileURL != project.appendingPathComponent(".claude/settings.local.json").standardizedFileURL {
+                files.append(local)
+            }
         }
         return files.compactMap { json(at: $0) }.reduce(into: [:]) { merged, settings in
             for (key, value) in settings {

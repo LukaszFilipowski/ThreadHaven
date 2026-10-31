@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Turn MCP servers and plugins on or off per project from the Workspace window, using Claude Code's documented local settings
 - Quick switcher: press ⌃⌥Space anywhere to search chats and jump to one
 - Token usage panel for every chat with re-read context, cold cache rebuilds and the heaviest tool results
 - Hand Off: a cheap model writes a note from a long chat and a fresh session continues from it

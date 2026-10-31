@@ -147,3 +147,5 @@
 "%@ session" = "Sesja %@";
 "Draft a prompt. Sending works only for Claude Code chats." = "Przygotuj prompt. Wysyłanie działa tylko dla czatów Claude Code.";
 "Sending works only for Claude Code chats" = "Wysyłanie działa tylko dla czatów Claude Code";
+"On for this project" = "Włączone w tym projekcie";
+"Saved for this project. New chats here pick it up; restart running ones." = "Zapisano dla tego projektu. Nowe czaty tu to uwzględnią, działające uruchom ponownie.";
