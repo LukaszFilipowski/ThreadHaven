@@ -43,3 +43,28 @@ package.targets += [
     ),
 ]
 #endif
+
+#if os(Linux)
+if Context.environment["THREADHAVEN_LINUX_APP"] == "1" {
+    package.dependencies.append(
+        .package(
+            url: "https://git.aparoksha.dev/aparoksha/adwaita-swift",
+            revision: "af5598fbd6f2425841f426ad388d7a7edd6c90e6"
+        )
+    )
+    package.products.append(.executable(name: "ThreadHavenLinux", targets: ["ThreadHavenLinux"]))
+    package.targets.append(
+        .executableTarget(
+            name: "ThreadHavenLinux",
+            dependencies: [
+                "ThreadHavenCore",
+                .product(name: "Adwaita", package: "adwaita-swift"),
+            ],
+            swiftSettings: [
+                .swiftLanguageMode(.v5),
+                .unsafeFlags(["-default-isolation", "MainActor"]),
+            ]
+        )
+    )
+}
+#endif
