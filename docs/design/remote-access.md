@@ -58,4 +58,6 @@ Web Push with VAPID keys generated on the Mac. iOS supports it for web apps adde
 - ThreadHaven shows the one-line `tailscale serve` command with a copy button and never runs Tailscale commands that change state. It only reads `tailscale status --json` and `tailscale funnel status --json`.
 - Rejected requests are counted in Settings and written to the unified log, which handles retention, instead of a separate log file.
 - The listening port is chosen at random once and reused, so the `tailscale serve` command keeps working across restarts.
+- Only the Tailscale user signed in on the Mac is accepted unless Settings list other tailnet users, and an unknown funnel state counts as a funnel.
+- A chat waiting for a permission or question answer does not accept remote prompts, so a short reply cannot approve anything.
 - Prompts starting with `!` are refused, because Claude Code runs them as shell commands without asking.

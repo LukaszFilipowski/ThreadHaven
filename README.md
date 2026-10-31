@@ -84,7 +84,7 @@ Remote access is a preview of a phone companion that works from any network thro
 3. Scan the QR code with your phone. It opens the web app and pairs that phone with its own key.
 4. Add the page to your home screen and tap **Turn on notifications** to get a push when a chat finishes or needs your approval (iOS 16.4 or later, or Android).
 
-From the phone you can see running and recent chats, read their recent messages and send a prompt to a chat that runs in Terminal or iTerm2. Every remote prompt also shows a notification on the Mac. Approving permission prompts and starting new chats stay on the Mac for now. Each paired device can be revoked in Settings, and turning remote access off, or leaving it idle for the period you choose, signs out every device. See [SECURITY.md](SECURITY.md#remote-access) for the protections and [the design](docs/design/remote-access.md) for what comes next.
+By default only your own Tailscale user can connect; Settings can allow other tailnet users. From the phone you can see running and recent chats, read their recent messages and send a prompt to a chat that runs in Terminal or iTerm2. Every remote prompt also shows a notification on the Mac. Approving permission prompts and starting new chats stay on the Mac for now, and a chat that waits for an approval does not accept remote prompts. Each paired device can be revoked in Settings, and turning remote access off, or leaving it idle for the period you choose, signs out every device. See [SECURITY.md](SECURITY.md#remote-access) for the protections and [the design](docs/design/remote-access.md) for what comes next.
 
 ## Privacy
 
