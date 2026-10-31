@@ -1,0 +1,3 @@
+"NSAppleEventsUsageDescription" = "ThreadHaven przełącza na kartę terminala z czatem i wysyła do niej prompty.";
+"NSMicrophoneUsageDescription" = "ThreadHaven używa mikrofonu, gdy dyktujesz prompt.";
+"NSSpeechRecognitionUsageDescription" = "ThreadHaven zamienia Twoje dyktowanie na tekst promptu na tym Macu.";
