@@ -30,7 +30,7 @@ public struct TokenStats: Sendable, Equatable {
     public static func analyze(url: URL) -> TokenStats {
         var tally = Tally()
         forEachLine(of: url) { line in
-            autoreleasepool { tally.consume(line) }
+            withAutoreleasePool { tally.consume(line) }
         }
         return tally.finish()
     }
@@ -41,7 +41,7 @@ public struct TokenStats: Sendable, Equatable {
         var buffer = Data()
         var reachedEnd = false
         while !reachedEnd {
-            autoreleasepool {
+            withAutoreleasePool {
                 guard let chunk = try? handle.read(upToCount: chunkSize), !chunk.isEmpty else {
                     reachedEnd = true
                     return
