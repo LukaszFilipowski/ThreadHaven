@@ -67,7 +67,7 @@ struct Composer: View {
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.return, modifiers: .command)
                 .disabled(!canSend || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .help(canSend ? String(localized: "Send to the chat (⌘↩)") : String(localized: "Sending works for running chats in Terminal or iTerm2"))
+                .help(canSend ? String(localized: "Send to the chat (⌘↩)") : unavailableHelp)
             }
         }
         .padding(12)
@@ -75,9 +75,16 @@ struct Composer: View {
     }
 
     private var placeholder: String {
-        canSend
-            ? String(localized: "Type or dictate what Claude should do next…")
-            : String(localized: "Draft a prompt. Resume the chat to send it.")
+        if canSend { return String(localized: "Type or dictate what Claude should do next…") }
+        return session.agent == .claude
+            ? String(localized: "Draft a prompt. Resume the chat to send it.")
+            : String(localized: "Draft a prompt. Sending works only for Claude Code chats.")
+    }
+
+    private var unavailableHelp: String {
+        session.agent == .claude
+            ? String(localized: "Sending works for running chats in Terminal or iTerm2")
+            : String(localized: "Sending works only for Claude Code chats")
     }
 
     private func toggleDictation() {

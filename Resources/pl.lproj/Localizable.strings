@@ -120,3 +120,6 @@
 "Plugins" = "Pluginy";
 "User" = "Użytkownik";
 "Plugin" = "Plugin";
+"%@ session" = "Sesja %@";
+"Draft a prompt. Sending works only for Claude Code chats." = "Przygotuj prompt. Wysyłanie działa tylko dla czatów Claude Code.";
+"Sending works only for Claude Code chats" = "Wysyłanie działa tylko dla czatów Claude Code";
