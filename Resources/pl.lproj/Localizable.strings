@@ -85,3 +85,4 @@
 "Model for handoff notes" = "Model do notatek przekazania";
 "The prompt cache of this chat has expired, so the next message re-reads all %@ tokens at full price. Compact it or hand off to a fresh chat first." = "Cache promptu tego czatu wygasł, więc następna wiadomość przeczyta wszystkie %@ tokenów w pełnej cenie. Najpierw zrób compact albo przekaż wątek do nowego czatu.";
 "Writes a handoff note with a cheap model and continues in a fresh chat" = "Tani model pisze notatkę przekazania, a praca toczy się dalej w nowym czacie";
+"%@ is not a folder owned by you, so ThreadHaven will not use it." = "%@ nie jest katalogiem należącym do Ciebie, więc ThreadHaven z niego nie skorzysta.";

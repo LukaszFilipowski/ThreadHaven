@@ -22,28 +22,41 @@ enum ClaudeCLI {
 
     static func run(_ instruction: String, input: String, model: String) async throws -> String {
         try await Task.detached(priority: .userInitiated) {
-            guard let claude = resolvePath() else { throw Failure.notFound }
-            let p = Process()
-            p.executableURL = URL(fileURLWithPath: claude)
-            p.arguments = ["-p", "--model", model] + isolationArguments + [instruction]
-            p.currentDirectoryURL = FileManager.default.temporaryDirectory
-            let stdin = Pipe()
-            let output = Pipe()
-            let errors = Pipe()
-            p.standardInput = stdin
-            p.standardOutput = output
-            p.standardError = errors
-            try p.run()
-            stdin.fileHandleForWriting.write(Data(input.utf8))
-            try stdin.fileHandleForWriting.close()
-            let data = output.fileHandleForReading.readDataToEndOfFile()
-            let err = errors.fileHandleForReading.readDataToEndOfFile()
-            p.waitUntilExit()
-            guard p.terminationStatus == 0 else {
-                throw Failure.failed(String(decoding: err.isEmpty ? data : err, as: UTF8.self))
-            }
-            return String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            try execute(["-p", "--model", model] + isolationArguments + [instruction], input: input)
         }.value
+    }
+
+    private static func execute(_ arguments: [String], input: String) throws -> String {
+        guard let claude = resolvePath() else { throw Failure.notFound }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: claude)
+        process.arguments = arguments
+        process.currentDirectoryURL = FileManager.default.temporaryDirectory
+        let stdin = Pipe()
+        let output = Pipe()
+        let errors = Pipe()
+        process.standardInput = stdin
+        process.standardOutput = output
+        process.standardError = errors
+        try process.run()
+
+        let group = DispatchGroup()
+        var errorData = Data()
+        DispatchQueue.global().async(group: group) {
+            stdin.fileHandleForWriting.write(Data(input.utf8))
+            try? stdin.fileHandleForWriting.close()
+        }
+        DispatchQueue.global().async(group: group) {
+            errorData = errors.fileHandleForReading.readDataToEndOfFile()
+        }
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        group.wait()
+        process.waitUntilExit()
+
+        guard process.terminationStatus == 0 else {
+            throw Failure.failed(String(decoding: errorData.isEmpty ? data : errorData, as: UTF8.self))
+        }
+        return String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     nonisolated(unsafe) private static var cachedPath: String?

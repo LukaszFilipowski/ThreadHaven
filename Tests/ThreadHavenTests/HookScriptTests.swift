@@ -3,14 +3,14 @@ import Testing
 @testable import ThreadHaven
 
 struct HookScriptTests {
-    private func run(_ payload: String, home: URL) throws {
+    private func run(_ payload: String, home: URL, term: String = "Apple_Terminal") throws {
         let script = home.appendingPathComponent("hook.sh")
         try HookInstaller.script.write(to: script, atomically: true, encoding: .utf8)
         let process = Process()
         let input = Pipe()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
         process.arguments = [script.path]
-        process.environment = ["HOME": home.path, "TERM_PROGRAM": "Apple_Terminal", "PATH": "/usr/bin:/bin"]
+        process.environment = ["HOME": home.path, "TERM_PROGRAM": term, "PATH": "/usr/bin:/bin"]
         process.standardInput = input
         try process.run()
         input.fileHandleForWriting.write(Data(payload.utf8))
@@ -62,6 +62,25 @@ struct HookScriptTests {
             try await group.waitForAll()
         }
         #expect(try events(in: home).count == 12)
+    }
+
+    @Test func keepsPromptsOutOfTheEventLog() throws {
+        let home = try tempHome()
+        try run(#"{"session_id":"s3","transcript_path":"/tmp/t.jsonl","cwd":"/Users/dev/project","hook_event_name":"UserPromptSubmit","prompt":"use token abc123"}"#, home: home)
+        let log = home.appendingPathComponent(".threadhaven/events.jsonl")
+        #expect(try !String(contentsOf: log, encoding: .utf8).contains("abc123"))
+        let event = try #require(try events(in: home).first?["event"] as? [String: Any])
+        #expect(event["cwd"] as? String == "/Users/dev/project")
+        #expect(event["transcript_path"] as? String == "/tmp/t.jsonl")
+        let mode = try FileManager.default.attributesOfItem(atPath: log.path)[.posixPermissions] as? NSNumber
+        #expect(mode?.intValue == 0o600)
+    }
+
+    @Test func sanitizesEnvironmentValues() throws {
+        let home = try tempHome()
+        try run(#"{"session_id":"s4","hook_event_name":"Stop"}"#, home: home, term: #"x","event":{}}"#)
+        let line = try #require(try events(in: home).first)
+        #expect(line["term"] as? String == "xevent")
     }
 
     @Test func ignoresEmptyInput() throws {

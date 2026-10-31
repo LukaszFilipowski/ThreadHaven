@@ -57,12 +57,15 @@ enum Handoff {
         let project = (cwd as NSString).lastPathComponent
         let folder = home.appendingPathComponent(".threadhaven/handoffs", isDirectory: true)
             .appendingPathComponent(project.isEmpty ? "unknown" : project, isDirectory: true)
-        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try HookInstaller.secureDirectory(folder.deletingLastPathComponent().deletingLastPathComponent())
+        try HookInstaller.secureDirectory(folder.deletingLastPathComponent())
+        try HookInstaller.secureDirectory(folder)
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd-HHmm"
         let file = folder.appendingPathComponent("\(formatter.string(from: date))-\(sessionId.prefix(8)).md")
         try Data(note.utf8).write(to: file, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
         return file
     }
 

@@ -5,7 +5,7 @@ enum ProcessScanner {
         let process = Process()
         let pipe = Pipe()
         process.executableURL = URL(fileURLWithPath: "/bin/ps")
-        process.arguments = ["-axo", "tty=,args="]
+        process.arguments = ["-axo", "tty=,stat=,args="]
         process.standardOutput = pipe
         process.standardError = FileHandle.nullDevice
         guard (try? process.run()) != nil else { return [] }
@@ -18,8 +18,10 @@ enum ProcessScanner {
         var ttys = Set<String>()
         for line in output.split(separator: "\n") {
             let fields = line.split(separator: " ", omittingEmptySubsequences: true)
-            guard fields.count >= 2, fields[0] != "??" else { continue }
-            if isClaude(fields.dropFirst()) { ttys.insert(String(fields[0])) }
+            guard fields.count >= 3, fields[0] != "??" else { continue }
+            let state = fields[1]
+            guard state.contains("+"), !state.contains("T") else { continue }
+            if isClaude(fields.dropFirst(2)) { ttys.insert(String(fields[0])) }
         }
         return ttys
     }
