@@ -291,3 +291,23 @@ enum WorkspaceInventory {
         read(url).flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
     }
 }
+
+struct InventoryGroup: Identifiable, Sendable {
+    let kind: InventoryItem.Kind
+    let items: [InventoryItem]
+
+    var id: InventoryItem.Kind { kind }
+    var tokens: Int { WorkspaceInventory.baselineTokens(of: items) }
+}
+
+extension WorkspaceInventory {
+    static func grouped(_ items: [InventoryItem]) -> [InventoryGroup] {
+        InventoryItem.Kind.allCases.compactMap { kind in
+            let members = items.filter { $0.kind == kind }.sorted { a, b in
+                let (left, right) = (a.estimatedTokens ?? -1, b.estimatedTokens ?? -1)
+                return left != right ? left > right : a.name.localizedStandardCompare(b.name) == .orderedAscending
+            }
+            return members.isEmpty ? nil : InventoryGroup(kind: kind, items: members)
+        }
+    }
+}

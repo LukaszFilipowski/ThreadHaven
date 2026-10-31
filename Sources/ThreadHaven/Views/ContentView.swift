@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(SessionStore.self) private var store
+    @Environment(\.openWindow) private var openWindow
     @AppStorage(Preferences.showBackground) private var showBackground = false
     @State private var selection: String?
     @State private var search = ""
@@ -65,6 +66,14 @@ struct ContentView: View {
             }
         }
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    openWindow(id: "workspace")
+                } label: {
+                    Label(String(localized: "Workspace"), systemImage: "square.stack.3d.up")
+                }
+                .help(String(localized: "What every chat in a project starts with (⇧⌘W)"))
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     showNewChat = true

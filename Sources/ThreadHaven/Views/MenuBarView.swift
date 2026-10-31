@@ -42,6 +42,10 @@ struct MenuBarView: View {
                     openWindow(id: "main")
                     NSApp.activate(ignoringOtherApps: true)
                 }
+                Button(String(localized: "Workspace")) {
+                    openWindow(id: "workspace")
+                    NSApp.activate(ignoringOtherApps: true)
+                }
                 Spacer()
                 Button(String(localized: "Quit")) { NSApp.terminate(nil) }
             }

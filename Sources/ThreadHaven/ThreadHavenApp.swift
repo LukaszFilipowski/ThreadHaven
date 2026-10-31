@@ -21,6 +21,14 @@ struct ThreadHavenApp: App {
             }
         }
 
+        Window("Workspace", id: "workspace") {
+            WorkspaceView()
+                .environment(store)
+                .frame(minWidth: 620, minHeight: 440)
+        }
+        .defaultSize(width: 760, height: 640)
+        .keyboardShortcut("i", modifiers: [.command, .shift])
+
         MenuBarExtra {
             MenuBarView()
                 .environment(store)
