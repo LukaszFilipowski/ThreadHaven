@@ -28,7 +28,29 @@ enum SessionStatus: String, Sendable {
     }
 }
 
+enum Agent: String, Sendable {
+    case claude
+    case codex
+
+    var name: String {
+        switch self {
+        case .claude: "Claude"
+        case .codex: "Codex"
+        }
+    }
+
+    var command: String { rawValue }
+
+    func resumeArguments(_ sessionId: String) -> [String] {
+        switch self {
+        case .claude: ["--resume", sessionId]
+        case .codex: ["resume", sessionId]
+        }
+    }
+}
+
 struct TranscriptMeta: Sendable {
+    var agent: Agent = .claude
     var sessionId: String
     var path: String
     var cwd: String?
@@ -82,6 +104,8 @@ struct Session: Identifiable, Sendable {
     var meta: TranscriptMeta?
     var live: LiveInfo?
     var processAlive = false
+
+    var agent: Agent { meta?.agent ?? .claude }
 
     var cwd: String { meta?.cwd ?? live?.cwd ?? "" }
 

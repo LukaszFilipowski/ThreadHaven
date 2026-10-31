@@ -25,6 +25,9 @@ struct SessionRow: View {
                     }
                 }
                 HStack(spacing: 6) {
+                    if session.agent != .claude {
+                        AgentBadge(agent: session.agent)
+                    }
                     Text(session.project)
                     Text("·")
                     Text(session.lastActivity, format: .relative(presentation: .named))
@@ -40,6 +43,20 @@ struct SessionRow: View {
             }
         }
         .padding(.vertical, 3)
+    }
+}
+
+struct AgentBadge: View {
+    let agent: Agent
+
+    var body: some View {
+        Text(agent.name)
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(.quaternary, in: Capsule())
+            .help(String(localized: "\(agent.name) session"))
     }
 }
 

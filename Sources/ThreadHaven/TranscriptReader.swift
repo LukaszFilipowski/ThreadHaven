@@ -174,7 +174,7 @@ enum TranscriptReader {
         data.split(separator: 0x0A).map { Data($0) }
     }
 
-    private static func contains(_ line: Data, _ needle: String) -> Bool {
+    static func contains(_ line: Data, _ needle: String) -> Bool {
         line.range(of: Data(needle.utf8)) != nil
     }
 

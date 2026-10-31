@@ -18,7 +18,7 @@ A first measurement shows that files on disk (CLAUDE.md, memory, skill descripti
 
 - A breakdown of the context every session starts with, measured from the first reply and split into what is on disk and what comes from tools and MCP servers
 - Turning skills, MCP servers and plugins on and off per project
-- A knowledge base per project that keeps CLAUDE.md, memory and handoff notes together
+- ~~A knowledge base per project that keeps CLAUDE.md, memory and handoff notes together~~ (done)
 
 ## 0.4 · Teams
 
@@ -35,5 +35,5 @@ A first measurement shows that files on disk (CLAUDE.md, memory, skill descripti
 
 ## Later
 
-- Codex CLI sessions
+- Live status for Codex CLI sessions
 - Signed and notarized releases distributed through a Homebrew cask

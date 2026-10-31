@@ -35,7 +35,7 @@ enum TerminalBridge {
     }
 
     static func canSend(to session: Session) -> Bool {
-        guard session.isLive, let b = session.terminalBundle, let app = TerminalApp(rawValue: b) else { return false }
+        guard session.agent == .claude, session.isLive, let b = session.terminalBundle, let app = TerminalApp(rawValue: b) else { return false }
         return app.canSendText
     }
 
@@ -133,8 +133,9 @@ enum TerminalBridge {
         }
     }
 
-    static func openNew(cwd: String, arguments: [String], terminal: TerminalApp) {
-        let command = (["cd", shellQuote(cwd), "&&", "claude"] + arguments.map(shellQuote)).joined(separator: " ")
+    static func openNew(cwd: String, agent: Agent = .claude, arguments: [String], terminal: TerminalApp) {
+        let launch = invocation(agent, arguments)
+        let command = ["cd", shellQuote(cwd), "&&", launch].joined(separator: " ")
         switch terminal {
         case .terminal:
             run("""
@@ -154,7 +155,7 @@ enum TerminalBridge {
         case .ghostty:
             let p = Process()
             p.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-            p.arguments = ["-na", "Ghostty", "--args", "--working-directory=\(cwd)", "-e", "/bin/zsh", "-lic", (["claude"] + arguments.map(shellQuote)).joined(separator: " ")]
+            p.arguments = ["-na", "Ghostty", "--args", "--working-directory=\(cwd)", "-e", "/bin/zsh", "-lic", launch]
             try? p.run()
         }
     }
@@ -176,6 +177,10 @@ enum TerminalBridge {
 
     private static func escape(_ s: String) -> String {
         s.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+    }
+
+    static func invocation(_ agent: Agent, _ arguments: [String]) -> String {
+        ([agent.command] + arguments.map(shellQuote)).joined(separator: " ")
     }
 
     static func shellQuote(_ s: String) -> String {

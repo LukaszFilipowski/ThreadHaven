@@ -6,10 +6,75 @@ struct WorkspaceView: View {
     @State private var items: [InventoryItem] = []
     @State private var scanning = false
     @State private var choseDefault = false
+    @State private var tab = Tab.inventory
+    @State private var refreshID = UUID()
+
+    enum Tab: Hashable {
+        case inventory
+        case knowledge
+    }
 
     var body: some View {
+        Group {
+            switch tab {
+            case .inventory: inventory
+            case .knowledge: knowledge
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigation) {
+                Picker(String(localized: "Project"), selection: $project) {
+                    Text("All projects").tag(String?.none)
+                    Divider()
+                    ForEach(store.recentDirectories, id: \.self) { directory in
+                        Text((directory as NSString).lastPathComponent).tag(Optional(directory))
+                    }
+                }
+                .pickerStyle(.menu)
+                .help(project ?? String(localized: "User scope only"))
+            }
+            ToolbarItem(placement: .principal) {
+                Picker(String(localized: "View"), selection: $tab) {
+                    Text("Inventory").tag(Tab.inventory)
+                    Text("Knowledge").tag(Tab.knowledge)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    refreshID = UUID()
+                    Task { await scan() }
+                } label: {
+                    Label(String(localized: "Refresh"), systemImage: "arrow.clockwise")
+                }
+                .keyboardShortcut("r")
+                .disabled(scanning)
+            }
+        }
+        .onAppear {
+            guard !choseDefault else { return }
+            choseDefault = true
+            project = store.recentDirectories.first
+        }
+        .task(id: project) { await scan() }
+    }
+
+    @ViewBuilder private var knowledge: some View {
+        if let project {
+            WorkspaceKnowledgeView(project: project, refreshID: refreshID)
+        } else {
+            ContentUnavailableView(
+                String(localized: "Pick a project"),
+                systemImage: "books.vertical",
+                description: Text("Knowledge keeps a project's CLAUDE.md, memory and handoff notes together.")
+            )
+        }
+    }
+
+    private var inventory: some View {
         let groups = WorkspaceInventory.grouped(items)
-        VStack(spacing: 0) {
+        return VStack(spacing: 0) {
             StartupContextHeader(
                 onDisk: WorkspaceInventory.baselineTokens(of: items),
                 session: measuredSession,
@@ -43,34 +108,6 @@ struct WorkspaceView: View {
                 }
             }
         }
-        .toolbar {
-            ToolbarItem(placement: .navigation) {
-                Picker(String(localized: "Project"), selection: $project) {
-                    Text("All projects").tag(String?.none)
-                    Divider()
-                    ForEach(store.recentDirectories, id: \.self) { directory in
-                        Text((directory as NSString).lastPathComponent).tag(Optional(directory))
-                    }
-                }
-                .pickerStyle(.menu)
-                .help(project ?? String(localized: "User scope only"))
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    Task { await scan() }
-                } label: {
-                    Label(String(localized: "Refresh"), systemImage: "arrow.clockwise")
-                }
-                .keyboardShortcut("r")
-                .disabled(scanning)
-            }
-        }
-        .onAppear {
-            guard !choseDefault else { return }
-            choseDefault = true
-            project = store.recentDirectories.first
-        }
-        .task(id: project) { await scan() }
     }
 
     private var measuredSession: Session? {

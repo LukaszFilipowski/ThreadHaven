@@ -100,7 +100,7 @@ final class SessionStore {
 
     func resume(_ id: String) {
         guard let session = session(id), !session.cwd.isEmpty else { return }
-        TerminalBridge.openNew(cwd: session.cwd, arguments: ["--resume", id], terminal: Preferences.terminal)
+        TerminalBridge.openNew(cwd: session.cwd, agent: session.agent, arguments: session.agent.resumeArguments(id), terminal: Preferences.terminal)
     }
 
     func newChat(in directory: String, continueLast: Bool, prompt: String) {
@@ -111,7 +111,7 @@ final class SessionStore {
     }
 
     func handOff(_ id: String) {
-        guard let session = session(id), !session.cwd.isEmpty,
+        guard let session = session(id), session.agent == .claude, !session.cwd.isEmpty,
               let path = session.meta?.path ?? session.live?.transcriptPath,
               handoffs[id] != .running else { return }
         handoffs[id] = .running
@@ -171,15 +171,14 @@ final class SessionStore {
         let known = stamps
         Task {
             let (current, updated) = await Task.detached(priority: .utility) {
-                let current = TranscriptReader.listTranscripts(since: since)
-                let updated = current
-                    .filter { known[$0.key] != $0.value }
-                    .map { TranscriptReader.readMeta(url: $0.key, stamp: $0.value) }
-                return (current, updated)
+                let claude = TranscriptReader.listTranscripts(since: since)
+                let codex = CodexReader.listSessions(since: since)
+                let updated = claude.filter { known[$0.key] != $0.value }.map { TranscriptReader.readMeta(url: $0.key, stamp: $0.value) }
+                    + codex.filter { known[$0.key] != $0.value }.map { CodexReader.readMeta(url: $0.key, stamp: $0.value) }
+                return (claude.merging(codex) { first, _ in first }, updated)
             }.value
-            for url in Set(stamps.keys).subtracting(current.keys) {
-                metas[url.deletingPathExtension().lastPathComponent] = nil
-            }
+            let removed = Set(stamps.keys).subtracting(current.keys).map(\.path)
+            metas = metas.filter { !removed.contains($0.value.path) }
             stamps = current
             for meta in updated { metas[meta.sessionId] = meta }
             scanning = false
@@ -187,7 +186,7 @@ final class SessionStore {
     }
 
     private func reloadMeta(_ id: String) {
-        guard let path = metas[id]?.path ?? live[id]?.transcriptPath else { return }
+        guard metas[id]?.agent != .codex, let path = metas[id]?.path ?? live[id]?.transcriptPath else { return }
         let url = URL(fileURLWithPath: path)
         Task {
             let result = await Task.detached(priority: .utility) { () -> (TranscriptReader.FileStamp, TranscriptMeta)? in
