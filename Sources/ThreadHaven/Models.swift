@@ -132,7 +132,7 @@ struct Session: Identifiable, Sendable {
     }
 
     var terminalBundle: String? {
-        if let b = live?.bundle, !b.isEmpty { return b }
+        if let bundle = live?.bundle, TerminalBridge.knownBundles.contains(bundle) { return bundle }
         return TerminalBridge.bundle(forTermProgram: live?.term)
     }
 }

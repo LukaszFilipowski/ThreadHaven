@@ -19,16 +19,19 @@ enum TerminalApp: String, CaseIterable, Identifiable {
 }
 
 enum TerminalBridge {
+    static let termPrograms = [
+        "Apple_Terminal": TerminalApp.terminal.rawValue,
+        "iTerm.app": TerminalApp.iterm.rawValue,
+        "ghostty": TerminalApp.ghostty.rawValue,
+        "vscode": "com.microsoft.VSCode",
+        "WarpTerminal": "dev.warp.Warp-Stable",
+        "WezTerm": "com.github.wez.wezterm",
+    ]
+
+    static let knownBundles = Set(termPrograms.values)
+
     static func bundle(forTermProgram term: String?) -> String? {
-        switch term {
-        case "Apple_Terminal": TerminalApp.terminal.rawValue
-        case "iTerm.app": TerminalApp.iterm.rawValue
-        case "ghostty": TerminalApp.ghostty.rawValue
-        case "vscode": "com.microsoft.VSCode"
-        case "WarpTerminal": "dev.warp.Warp-Stable"
-        case "WezTerm": "com.github.wez.wezterm"
-        default: nil
-        }
+        term.flatMap { termPrograms[$0] }
     }
 
     static func canSend(to session: Session) -> Bool {
