@@ -25,6 +25,8 @@ struct TranscriptReaderTests {
         #expect(meta.contextTokens == 62_002)
         #expect(meta.model == "claude-opus-5-5[1m]")
         #expect(meta.contextWindow == 1_000_000)
+        #expect(meta.lastReplyAt == TranscriptReader.parseDate("2026-10-31T10:00:09.000Z"))
+        #expect(meta.cacheTTL == 3600)
     }
 
     @Test func recentMessagesSkipCommandsToolResultsAndSidechains() {

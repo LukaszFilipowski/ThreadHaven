@@ -9,6 +9,12 @@ final class SessionStore {
     private(set) var aliveTTYs: Set<String> = []
     private(set) var hooksInstalled = HookInstaller.isInstalled
     private(set) var lastError: String?
+    private(set) var handoffs: [String: HandoffState] = [:]
+
+    enum HandoffState: Equatable {
+        case running
+        case failed(String)
+    }
 
     @ObservationIgnored private var stamps: [URL: TranscriptReader.FileStamp] = [:]
     @ObservationIgnored private var eventsOffset: UInt64 = 0
@@ -102,6 +108,26 @@ final class SessionStore {
         let prompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         if !prompt.isEmpty { arguments += ["--", prompt] }
         TerminalBridge.openNew(cwd: directory, arguments: arguments, terminal: Preferences.terminal)
+    }
+
+    func handOff(_ id: String) {
+        guard let session = session(id), !session.cwd.isEmpty,
+              let path = session.meta?.path ?? session.live?.transcriptPath,
+              handoffs[id] != .running else { return }
+        handoffs[id] = .running
+        let cwd = session.cwd
+        let model = defaults.string(forKey: Preferences.handoffModel) ?? "haiku"
+        Task {
+            do {
+                let digest = await Task.detached(priority: .userInitiated) { Handoff.digest(path: path) }.value
+                let note = try await Handoff.summarize(digest: digest, cwd: cwd, model: model)
+                let url = try Handoff.save(note: note, sessionId: id, cwd: cwd)
+                handoffs[id] = nil
+                newChat(in: cwd, continueLast: false, prompt: "Read the handoff note at \(url.path) and continue from its next step.")
+            } catch {
+                handoffs[id] = .failed(error.localizedDescription)
+            }
+        }
     }
 
     func installHooks() {
@@ -268,14 +294,15 @@ final class SessionStore {
         guard defaults.bool(forKey: Preferences.autoCompact),
               let session = session(id), session.status == .finished,
               TerminalBridge.canSend(to: session),
-              session.contextFraction >= defaults.double(forKey: Preferences.compactThreshold) / 100,
+              let tokens = session.meta?.contextTokens,
+              tokens >= defaults.integer(forKey: Preferences.compactTokens),
               Date().timeIntervalSince(lastCompact[id] ?? .distantPast) > 600 else { return }
         compact(id)
         Notifier.shared.post(
             sessionId: id + ".compact",
             title: session.title,
             subtitle: String(localized: "Auto-compact started"),
-            body: String(localized: "Context was at \(Int(session.contextFraction * 100))%")
+            body: String(localized: "Context reached \(ContextGauge.short(tokens)) tokens")
         )
     }
 }

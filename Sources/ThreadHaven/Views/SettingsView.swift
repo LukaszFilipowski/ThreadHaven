@@ -8,7 +8,8 @@ struct SettingsView: View {
     @AppStorage(Preferences.showBackground) private var showBackground = false
     @AppStorage(Preferences.notify) private var notify = true
     @AppStorage(Preferences.autoCompact) private var autoCompact = false
-    @AppStorage(Preferences.compactThreshold) private var compactThreshold = 70.0
+    @AppStorage(Preferences.compactTokens) private var compactTokens = 150_000
+    @AppStorage(Preferences.handoffModel) private var handoffModel = "haiku"
     @AppStorage(Preferences.polishModel) private var polishModel = "haiku"
     @AppStorage("dictationLocale") private var dictationLocale = Locale.current.identifier
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
@@ -53,16 +54,21 @@ struct SettingsView: View {
             Section {
                 Toggle(String(localized: "Auto-compact long chats"), isOn: $autoCompact)
                 HStack {
-                    Slider(value: $compactThreshold, in: 40...95, step: 5) {
+                    Slider(value: compactTokensValue, in: 50_000...500_000, step: 25_000) {
                         Text("Threshold")
                     }
-                    Text("\(Int(compactThreshold))%").monospacedDigit().frame(width: 44, alignment: .trailing)
+                    Text(ContextGauge.short(compactTokens)).monospacedDigit().frame(width: 52, alignment: .trailing)
                 }
                 .disabled(!autoCompact)
+                Picker(String(localized: "Model for handoff notes"), selection: $handoffModel) {
+                    Text("Haiku").tag("haiku")
+                    Text("Sonnet").tag("sonnet")
+                    Text("Opus").tag("opus")
+                }
             } header: {
                 Text("Context")
             } footer: {
-                Text("When a running chat finishes a turn above the threshold, ThreadHaven sends /compact to it. Only for chats in Terminal or iTerm2.")
+                Text("Every turn re-reads the whole context, so smaller chats go further on the same plan. When a running chat finishes a turn above the threshold, ThreadHaven sends /compact to it (Terminal and iTerm2 only).")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -87,5 +93,9 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .frame(width: 520)
         .padding(.vertical, 8)
+    }
+
+    private var compactTokensValue: Binding<Double> {
+        Binding(get: { Double(compactTokens) }, set: { compactTokens = Int($0) })
     }
 }

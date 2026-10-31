@@ -7,7 +7,6 @@
 "Claude needs your attention" = "Claude potrzebuje Twojej uwagi";
 "Compact Now" = "Compact teraz";
 "Compact" = "Compact";
-"Context was at %lld%%" = "Kontekst był zajęty w %lld%%";
 "Context window usage of the last reply" = "Zajętość okna kontekstu przy ostatniej odpowiedzi";
 "Context" = "Kontekst";
 "Continue the previous thread" = "Kontynuuj poprzedni wątek";
@@ -79,3 +78,10 @@
 "Working…" = "Pracuje…";
 "Your turn" = "Twoja kolej";
 "Unexpected format of %@ in ~/.claude/settings.json. Nothing was changed." = "Nieoczekiwany format %@ w ~/.claude/settings.json. Nic nie zostało zmienione.";
+"Context reached %@ tokens" = "Kontekst osiągnął %@ tokenów";
+"Every turn re-reads the whole context, so smaller chats go further on the same plan. When a running chat finishes a turn above the threshold, ThreadHaven sends /compact to it (Terminal and iTerm2 only)." = "Każda tura czyta cały kontekst od nowa, więc mniejsze czaty dają więcej pracy w tym samym planie. Gdy działający czat skończy turę powyżej progu, ThreadHaven wyśle do niego /compact (tylko Terminal i iTerm2).";
+"Hand Off" = "Przekaż";
+"Hand Off to a Fresh Chat" = "Przekaż do nowego czatu";
+"Model for handoff notes" = "Model do notatek przekazania";
+"The prompt cache of this chat has expired, so the next message re-reads all %@ tokens at full price. Compact it or hand off to a fresh chat first." = "Cache promptu tego czatu wygasł, więc następna wiadomość przeczyta wszystkie %@ tokenów w pełnej cenie. Najpierw zrób compact albo przekaż wątek do nowego czatu.";
+"Writes a handoff note with a cheap model and continues in a fresh chat" = "Tani model pisze notatkę przekazania, a praca toczy się dalej w nowym czacie";

@@ -6,7 +6,8 @@ enum Preferences {
     static let showBackground = "showBackground"
     static let notify = "notify"
     static let autoCompact = "autoCompact"
-    static let compactThreshold = "compactThreshold"
+    static let compactTokens = "compactTokens"
+    static let handoffModel = "handoffModel"
     static let polishModel = "polishModel"
 
     static func registerDefaults() {
@@ -16,7 +17,8 @@ enum Preferences {
             showBackground: false,
             notify: true,
             autoCompact: false,
-            compactThreshold: 70.0,
+            compactTokens: 150_000,
+            handoffModel: "haiku",
             polishModel: "haiku",
         ])
     }
