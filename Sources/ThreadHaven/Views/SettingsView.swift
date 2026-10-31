@@ -9,6 +9,8 @@ struct SettingsView: View {
     @AppStorage(Preferences.notify) private var notify = true
     @AppStorage(Preferences.autoCompact) private var autoCompact = false
     @AppStorage(Preferences.compactThreshold) private var compactThreshold = 70.0
+    @AppStorage(Preferences.polishModel) private var polishModel = "haiku"
+    @AppStorage("dictationLocale") private var dictationLocale = Locale.current.identifier
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
@@ -65,6 +67,22 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section(String(localized: "Dictation & prompt polishing")) {
+                Picker(String(localized: "Dictation language"), selection: $dictationLocale) {
+                    Text("Polski").tag("pl_PL")
+                    Text("English (US)").tag("en_US")
+                    Text("English (UK)").tag("en_GB")
+                    Text("Deutsch").tag("de_DE")
+                    if !["pl_PL", "en_US", "en_GB", "de_DE"].contains(dictationLocale) {
+                        Text(dictationLocale).tag(dictationLocale)
+                    }
+                }
+                Picker(String(localized: "Model for polishing"), selection: $polishModel) {
+                    Text("Haiku").tag("haiku")
+                    Text("Sonnet").tag("sonnet")
+                    Text("Opus").tag("opus")
+                }
+            }
         }
         .formStyle(.grouped)
         .frame(width: 520)

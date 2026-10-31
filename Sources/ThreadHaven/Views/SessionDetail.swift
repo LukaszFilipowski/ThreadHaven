@@ -11,6 +11,8 @@ struct SessionDetail: View {
             header
             Divider()
             transcript
+            Divider()
+            Composer(session: session)
         }
         .task(id: session.meta?.modified) {
             await loadMessages()
