@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest an idea or improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: How could ThreadHaven help?
+  - type: textarea
+    id: tokens
+    attributes:
+      label: Impact on tokens
+      description: If this is about saving tokens, how would you measure the difference? `make stats` can help.
