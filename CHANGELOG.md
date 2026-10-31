@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Per-session token analytics: context growth, cache usage, cold cache rebuilds and heaviest tool results
+
 ### Fixed
 
 - Universal app build on CI runners
