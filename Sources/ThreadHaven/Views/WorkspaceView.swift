@@ -13,6 +13,7 @@ struct WorkspaceView: View {
     enum Tab: Hashable {
         case inventory
         case knowledge
+        case team
     }
 
     var body: some View {
@@ -20,6 +21,7 @@ struct WorkspaceView: View {
             switch tab {
             case .inventory: inventory
             case .knowledge: knowledge
+            case .team: team
             }
         }
         .toolbar {
@@ -38,6 +40,7 @@ struct WorkspaceView: View {
                 Picker(String(localized: "View"), selection: $tab) {
                     Text("Inventory").tag(Tab.inventory)
                     Text("Knowledge").tag(Tab.knowledge)
+                    Text("Team").tag(Tab.team)
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
@@ -69,6 +72,18 @@ struct WorkspaceView: View {
                 String(localized: "Pick a project"),
                 systemImage: "books.vertical",
                 description: Text("Knowledge keeps a project's CLAUDE.md, memory and handoff notes together.")
+            )
+        }
+    }
+
+    @ViewBuilder private var team: some View {
+        if let project {
+            WorkspaceTeamView(project: project, refreshID: refreshID)
+        } else {
+            ContentUnavailableView(
+                String(localized: "Pick a project"),
+                systemImage: "person.3",
+                description: Text("Team shows the plugin marketplaces and plugins a project shares through git.")
             )
         }
     }

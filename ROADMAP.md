@@ -22,7 +22,7 @@ A first measurement shows that files on disk (CLAUDE.md, memory, skill descripti
 
 ## 0.4 · Teams
 
-- Team skills through Claude Code plugin marketplaces: show what a project enables and add a team marketplace in a click, instead of a separate sharing system
+- ~~Team skills through Claude Code plugin marketplaces: show what a project enables and add a team marketplace in a click, instead of a separate sharing system~~ (done)
 - Team profiles that set up the ThreadHaven hook, plugins and settings in one step
 - Opt-in team usage insights that stay on your own infrastructure
 
