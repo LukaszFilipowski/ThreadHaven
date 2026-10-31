@@ -7,8 +7,9 @@ import ThreadHavenCore
 final class SessionStore {
     private(set) var metas: [String: TranscriptMeta] = [:]
     private(set) var live: [String: LiveInfo] = [:]
-    private(set) var aliveTTYs: Set<String> = []
+    private(set) var aliveTTYs: [Agent: Set<String>] = [:]
     private(set) var hooksInstalled = HookInstaller.isInstalled
+    private(set) var codexNotify = CodexNotifyInstaller.state
     private(set) var lastError: String?
     private(set) var handoffs: [String: HandoffState] = [:]
 
@@ -59,7 +60,7 @@ final class SessionStore {
     func session(_ id: String) -> Session? {
         guard metas[id] != nil || live[id] != nil else { return nil }
         var session = Session(id: id, meta: metas[id], live: live[id])
-        if let tty = session.live?.tty { session.processAlive = aliveTTYs.contains(tty) }
+        if let tty = session.live?.tty { session.processAlive = aliveTTYs[session.agent]?.contains(tty) ?? false }
         return session
     }
 
@@ -96,6 +97,7 @@ final class SessionStore {
     }
 
     func compact(_ id: String) {
+        guard let session = session(id), TerminalBridge.canCompact(session) else { return }
         if send("/compact", to: id) { lastCompact[id] = Date() }
     }
 
@@ -145,6 +147,20 @@ final class SessionStore {
         hooksInstalled = HookInstaller.isInstalled
     }
 
+    func installCodexNotify() {
+        attempt { try CodexNotifyInstaller.install() }
+        codexNotify = CodexNotifyInstaller.state
+    }
+
+    func uninstallCodexNotify() {
+        attempt { try CodexNotifyInstaller.uninstall() }
+        codexNotify = CodexNotifyInstaller.state
+    }
+
+    func refreshCodexNotify() {
+        codexNotify = CodexNotifyInstaller.state
+    }
+
     private func every(_ interval: TimeInterval, _ action: @escaping @MainActor (SessionStore) -> Void) {
         let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
@@ -181,7 +197,10 @@ final class SessionStore {
             let removed = Set(stamps.keys).subtracting(current.keys).map(\.path)
             metas = metas.filter { !removed.contains($0.value.path) }
             stamps = current
-            for meta in updated { metas[meta.sessionId] = meta }
+            for meta in updated {
+                metas[meta.sessionId] = meta
+                markCodexWorkingIfActive(meta)
+            }
             scanning = false
         }
     }
@@ -203,7 +222,7 @@ final class SessionStore {
 
     private func refreshProcesses() {
         Task {
-            let ttys = await Task.detached(priority: .utility) { ProcessScanner.claudeTTYs() }.value
+            let ttys = await Task.detached(priority: .utility) { ProcessScanner.agentTTYs() }.value
             if aliveTTYs != ttys { aliveTTYs = ttys }
         }
     }
@@ -274,6 +293,15 @@ final class SessionStore {
             info.seen = false
             alert = event.lastAssistantMessage.map { String($0.prefix(180)) }
                 ?? String(localized: "Claude finished and is waiting for you")
+        case "CodexTurnComplete":
+            info.agent = .codex
+            info.ended = false
+            info.status = .finished
+            info.message = event.lastAssistantMessage.flatMap { $0.isEmpty ? nil : String($0.prefix(300)) }
+            info.seen = false
+            alert = info.message.map { String($0.prefix(180)) }
+                ?? String(localized: "Codex finished and is waiting for you")
+            endOtherSessions(on: info.tty, except: id)
         case "SessionEnd":
             info.ended = true
             info.status = .idle
@@ -289,15 +317,25 @@ final class SessionStore {
         }
         if let alert, defaults.bool(forKey: Preferences.notify),
            info.isInteractive || defaults.bool(forKey: Preferences.showBackground) {
-            let title = session(id)?.title ?? "Claude"
+            let title = session(id)?.title ?? (info.agent ?? .claude).name
             Notifier.shared.post(sessionId: id, title: title, subtitle: info.status.label, body: alert)
         }
     }
 
+    private func markCodexWorkingIfActive(_ meta: TranscriptMeta) {
+        guard meta.agent == .codex, var info = live[meta.sessionId], !info.ended, info.status != .working,
+              meta.modified > info.updatedAt.addingTimeInterval(Self.codexQuietPeriod) else { return }
+        info.markWorking()
+        live[meta.sessionId] = info
+        Notifier.shared.clear(meta.sessionId)
+    }
+
+    private static let codexQuietPeriod: TimeInterval = 5
+
     private func autoCompactIfNeeded(_ id: String) {
         guard defaults.bool(forKey: Preferences.autoCompact),
               let session = session(id), session.status == .finished,
-              TerminalBridge.canSend(to: session),
+              TerminalBridge.canCompact(session),
               let tokens = session.meta?.contextTokens,
               tokens >= defaults.integer(forKey: Preferences.compactTokens),
               Date().timeIntervalSince(lastCompact[id] ?? .distantPast) > 600 else { return }

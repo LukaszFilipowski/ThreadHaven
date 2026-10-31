@@ -95,7 +95,7 @@ struct SessionDetail: View {
                 } label: {
                     Label(String(localized: "Compact"), systemImage: "arrow.down.right.and.arrow.up.left")
                 }
-                .disabled(!TerminalBridge.canSend(to: session))
+                .disabled(!TerminalBridge.canCompact(session))
                 .help(String(localized: "Sends /compact to this chat"))
                 HandoffButton(session: session)
             } else {
@@ -187,7 +187,7 @@ struct ColdCacheBanner: View {
                 .font(.callout)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
-            if TerminalBridge.canSend(to: session) {
+            if TerminalBridge.canCompact(session) {
                 Button(String(localized: "Compact")) { store.compact(session.id) }
             }
             HandoffButton(session: session)

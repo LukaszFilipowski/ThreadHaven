@@ -36,8 +36,12 @@ enum TerminalBridge {
     }
 
     static func canSend(to session: Session) -> Bool {
-        guard session.agent == .claude, session.isLive, let b = session.terminalBundle, let app = TerminalApp(rawValue: b) else { return false }
+        guard session.isLive, let b = session.terminalBundle, let app = TerminalApp(rawValue: b) else { return false }
         return app.canSendText
+    }
+
+    static func canCompact(_ session: Session) -> Bool {
+        session.agent.canCompact && canSend(to: session)
     }
 
     @discardableResult

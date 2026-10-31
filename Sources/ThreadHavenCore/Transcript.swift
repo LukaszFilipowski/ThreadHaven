@@ -13,6 +13,8 @@ public enum Agent: String, Sendable {
 
     public var command: String { rawValue }
 
+    public var canCompact: Bool { self == .claude }
+
     public func resumeArguments(_ sessionId: String) -> [String] {
         switch self {
         case .claude: ["--resume", sessionId]

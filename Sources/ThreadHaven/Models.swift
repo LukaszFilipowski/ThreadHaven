@@ -30,6 +30,7 @@ enum SessionStatus: String, Sendable {
 }
 
 struct LiveInfo: Sendable {
+    var agent: Agent?
     var status: SessionStatus = .idle
     var message: String?
     var tty: String?
@@ -66,7 +67,7 @@ struct Session: Identifiable, Sendable {
     var live: LiveInfo?
     var processAlive = false
 
-    var agent: Agent { meta?.agent ?? .claude }
+    var agent: Agent { meta?.agent ?? live?.agent ?? .claude }
 
     var cwd: String { meta?.cwd ?? live?.cwd ?? "" }
 

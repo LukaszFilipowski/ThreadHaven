@@ -145,8 +145,6 @@
 "OK" = "OK";
 "Handoff notes" = "Notatki przekazania";
 "%@ session" = "Sesja %@";
-"Draft a prompt. Sending works only for Claude Code chats." = "Przygotuj prompt. Wysyłanie działa tylko dla czatów Claude Code.";
-"Sending works only for Claude Code chats" = "Wysyłanie działa tylko dla czatów Claude Code";
 "On for this project" = "Włączone w tym projekcie";
 "Saved for this project. New chats here pick it up; restart running ones." = "Zapisano dla tego projektu. Nowe czaty tu to uwzględnią, działające uruchom ponownie.";
 "Team" = "Zespół";
@@ -169,3 +167,11 @@
 "Declared in the project's .claude/settings.json and shared through git" = "Zadeklarowany w .claude/settings.json projektu i udostępniany przez git";
 "Declared in the project's .claude/settings.local.json, only on this Mac" = "Zadeklarowany w .claude/settings.local.json projektu, tylko na tym Macu";
 "Known to Claude Code for your user account" = "Znany Claude Code na Twoim koncie użytkownika";
+"Codex CLI notify" = "Powiadomienia Codex CLI";
+"In use" = "W użyciu";
+"Cannot be edited safely" = "Nie da się bezpiecznie edytować";
+"Codex runs a single notify program, and yours is already set in ~/.codex/config.toml. To use both, call %@ from your program with the same JSON argument." = "Codex uruchamia tylko jeden program notify, a Twój jest już ustawiony w ~/.codex/config.toml. Aby używać obu, wywołaj %@ ze swojego programu z tym samym argumentem JSON.";
+"Unexpected content in ~/.codex/config.toml (%@). Nothing was changed." = "Nieoczekiwana zawartość ~/.codex/config.toml (%@). Nic nie zostało zmienione.";
+"notify in ~/.codex/config.toml is already used by another program. Nothing was changed." = "notify w ~/.codex/config.toml jest już używane przez inny program. Nic nie zostało zmienione.";
+"Type or dictate what Codex should do next…" = "Napisz lub podyktuj, co Codex ma zrobić dalej…";
+"Codex finished and is waiting for you" = "Codex skończył i czeka na Ciebie";

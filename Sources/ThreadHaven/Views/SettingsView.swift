@@ -48,6 +48,29 @@ struct SettingsView: View {
                         Button(String(localized: "Install")) { store.installHooks() }
                     }
                 }
+                if store.codexNotify != .unavailable {
+                    LabeledContent(String(localized: "Codex CLI notify")) {
+                        switch store.codexNotify {
+                        case .ours:
+                            HStack {
+                                Label(String(localized: "Installed"), systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                                Button(String(localized: "Remove")) { store.uninstallCodexNotify() }
+                            }
+                        case .absent:
+                            Button(String(localized: "Install")) { store.installCodexNotify() }
+                        case .foreign:
+                            Label(String(localized: "In use"), systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                        case .unsupported, .unavailable:
+                            Label(String(localized: "Cannot be edited safely"), systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                        }
+                    }
+                    if store.codexNotify == .foreign {
+                        Text("Codex runs a single notify program, and yours is already set in ~/.codex/config.toml. To use both, call \(CodexNotifyInstaller.scriptURL.path) from your program with the same JSON argument.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                    }
+                }
                 if let err = store.lastError {
                     Text(err).font(.caption).foregroundStyle(.red)
                 }
@@ -95,6 +118,7 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .frame(width: 520)
         .padding(.vertical, 8)
+        .onAppear { store.refreshCodexNotify() }
     }
 
     private var compactTokensValue: Binding<Double> {
