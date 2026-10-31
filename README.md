@@ -28,6 +28,7 @@ Measure your own usage with `make stats`. The report is computed locally from `~
 - **Notifications.** Get a notification when a chat finishes its turn or needs your approval. Clicking it opens the right tab.
 - **New chat in a folder.** <kbd>⌘N</kbd> starts `claude --continue` in any recent folder, so you pick up the previous thread right away.
 - **Context awareness.** Every chat shows how full its context window is. Send `/compact` with one click, or let ThreadHaven do it automatically above a threshold you choose.
+- **Project knowledge.** CLAUDE.md, memory and handoff notes of a project side by side in the Workspace window, with a preview and a fresh chat from any note.
 - **Dictation.** Dictate prompts with on-device speech recognition, then turn a rough note into a clean prompt with one click (uses your own `claude` CLI).
 - **Native and small.** SwiftUI, a universal binary under 3 MB, light and dark mode, English and Polish.
 
