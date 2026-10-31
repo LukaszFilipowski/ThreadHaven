@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Per-session token analytics: context growth, cache usage, cold cache rebuilds and heaviest tool results
 - Read-only workspace inventory of CLAUDE.md files, memory, skills, commands, agents, MCP servers and plugins with estimated startup tokens
 - Workspace window (⇧⌘W) that shows what every chat in a project starts with and compares it with the measured start-up context
+- Read-only OpenAI Codex CLI sessions next to Claude Code chats, with search, recent messages, context usage and resuming through `codex resume`
 
 ### Changed
 

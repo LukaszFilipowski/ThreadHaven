@@ -35,6 +35,6 @@ A first measurement shows that files on disk (CLAUDE.md, memory, skill descripti
 
 ## Later
 
-- Codex CLI sessions
+- Live status for Codex CLI sessions
 - A global hotkey with a quick switcher
 - Signed and notarized releases distributed through a Homebrew cask
