@@ -29,3 +29,30 @@ jobs:
           persist-credentials: false
       - run: swift build --product threadhaven-stats
       - run: swift test
+
+  linux-app:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50@sha256:1de59efef01a946d9f28f1ec3458bf6f61dcee3507d7fecdd473f8134da4ec77
+      options: --privileged
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Build Flatpak
+        run: |
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          if ! flatpak-builder --user --install-deps-from=flathub --disable-rofiles-fuse --force-clean --repo=repo build-dir linux/app.threadhaven.ThreadHaven.yml > build.log 2>&1; then
+            tail -n 200 build.log
+            summary=$(grep -E "error:|Error:|fatal:" build.log | head -n 30 | cut -c1-300 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            tail=$(tail -n 40 build.log | cut -c1-300 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error title=Flatpak errors::${summary}"
+            echo "::error title=Flatpak log tail::${tail}"
+            exit 1
+          fi
+          flatpak build-bundle repo ThreadHaven.flatpak app.threadhaven.ThreadHaven
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: ThreadHaven-flatpak
+          path: ThreadHaven.flatpak
+          if-no-files-found: error

@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - Live status for Codex CLI sessions: an optional notify script in `~/.codex/config.toml` shows Working and Your turn, sends notifications, and lets you switch to the tab or send a prompt when Codex runs in the foreground of Terminal or iTerm2
+- Linux desktop app preview (GTK4 and libadwaita, built as a Flatpak) with recent Claude Code and Codex sessions, recent messages, token usage and resuming in a terminal
 - Team tab in the Workspace window that shows a project's plugin marketplaces and enabled plugins, and adds a team marketplace with project scope through the claude CLI
 - Turn MCP servers and plugins on or off per project from the Workspace window, using Claude Code's documented local settings
 - Quick switcher: press ⌃⌥Space anywhere to search chats and jump to one

@@ -1,0 +1,46 @@
+id: app.threadhaven.ThreadHaven
+runtime: org.gnome.Platform
+runtime-version: "50"
+sdk: org.gnome.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.swift6
+command: threadhaven
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --filesystem=~/.claude:ro
+  - --filesystem=~/.codex:ro
+  - --talk-name=org.freedesktop.Flatpak
+build-options:
+  append-path: /usr/lib/sdk/swift6/bin
+  prepend-ld-library-path: /usr/lib/sdk/swift6/lib
+  build-args:
+    - --share=network
+  env:
+    THREADHAVEN_LINUX_APP: "1"
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /share/doc
+  - /share/man
+  - "*.a"
+modules:
+  - name: threadhaven
+    buildsystem: simple
+    sources:
+      - type: dir
+        path: ..
+        skip:
+          - .build
+          - .flatpak-builder
+          - build
+          - build-dir
+          - repo
+    build-commands:
+      - swift build -c release --static-swift-stdlib --product ThreadHavenLinux
+      - install -Dm755 .build/release/ThreadHavenLinux /app/bin/threadhaven
+      - install -Dm644 linux/app.threadhaven.ThreadHaven.desktop /app/share/applications/app.threadhaven.ThreadHaven.desktop
+      - install -Dm644 linux/app.threadhaven.ThreadHaven.metainfo.xml /app/share/metainfo/app.threadhaven.ThreadHaven.metainfo.xml
+      - install -Dm644 linux/app.threadhaven.ThreadHaven.png /app/share/icons/hicolor/256x256/apps/app.threadhaven.ThreadHaven.png
