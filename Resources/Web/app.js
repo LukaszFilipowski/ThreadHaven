@@ -78,18 +78,28 @@ async function api(path, options) {
     credentials: 'omit',
     redirect: 'error'
   });
-  if (response.status === 401 || response.status === 403) {
+  if (response.status === 401) {
     unpair('This device is no longer paired. Scan a new code on your Mac.');
     throw new Error('Not paired');
   }
-  let body = {};
-  try {
-    body = await response.json();
-  } catch (_) {
-    body = {};
-  }
+  const body = await readJSON(response);
+  if (response.status === 403) throw new Error(forbiddenMessage(body));
   if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : 'Request failed (' + response.status + ')');
   return body;
+}
+
+async function readJSON(response) {
+  try {
+    const body = await response.json();
+    return body && typeof body === 'object' ? body : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function forbiddenMessage(body) {
+  const reason = typeof body.error === 'string' ? body.error : 'Access was refused.';
+  return reason + ' This device stays paired.';
 }
 
 function show(view) {
@@ -269,9 +279,13 @@ async function listen() {
         credentials: 'omit',
         signal: controller.signal
       });
-      if (response.status === 401 || response.status === 403) {
+      if (response.status === 401) {
         unpair('This device is no longer paired. Scan a new code on your Mac.');
         return;
+      }
+      if (response.status === 403) {
+        $('list-error').textContent = forbiddenMessage(await readJSON(response));
+        await sleep(25000);
       }
       if (response.ok && response.body) {
         setOnline(true);

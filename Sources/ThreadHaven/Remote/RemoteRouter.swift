@@ -147,7 +147,7 @@ final class RemoteRouter {
         let deviceId: String
         switch auth.authenticate(request, now: now) {
         case .denied(let status):
-            var response = HTTPResponse.error(status, status == 429 ? "Too many failed attempts" : "Not authorized")
+            var response = HTTPResponse.error(status, Self.deniedMessage(status))
             if status == 401 { response.headers.append(("WWW-Authenticate", "Bearer")) }
             return .response(response)
         case .allowed(let id):
@@ -184,6 +184,14 @@ final class RemoteRouter {
             return .response(subscribe(request, deviceId: deviceId))
         default:
             return .response(.error(404, "Not found"))
+        }
+    }
+
+    static func deniedMessage(_ status: Int) -> String {
+        switch status {
+        case 403: "This Tailscale user is not allowed on this Mac."
+        case 429: "Too many failed attempts. Try again later."
+        default: "Not authorized"
         }
     }
 

@@ -169,6 +169,14 @@ struct RemoteRouterTests {
         #expect(json(await send("GET", "/api/push/key", token: token))?["key"] as? String == "BPUBLICKEY")
     }
 
+    @Test func explainsRefusedLogins() async throws {
+        let other = [(name: "tailscale-user-login", value: "mallory@example.invalid")]
+        let result = response(await send("GET", "/api/sessions", token: token, extra: other))
+        #expect(result?.status == 403)
+        let body = try #require(json(await send("GET", "/api/sessions", token: token, extra: other)))
+        #expect(body["error"] as? String == "This Tailscale user is not allowed on this Mac.")
+    }
+
     @Test func refusesFunnelRequestsBeforeAnythingElse() async {
         let funnel = [(name: "tailscale-funnel-request", value: "?1"), (name: "tailscale-user-login", value: "alice@example.invalid")]
         #expect(response(await send("GET", "/", extra: funnel))?.status == 403)
