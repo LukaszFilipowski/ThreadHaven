@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - Handoff notes that let a long chat continue in a fresh session, written by a cheap model from a compact transcript digest
+- Per-session token analytics: context growth, cache usage, cold cache rebuilds and heaviest tool results
 
 ### Fixed
 
