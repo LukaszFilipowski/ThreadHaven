@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Token usage panel for every chat with re-read context, cold cache rebuilds and the heaviest tool results
 - Hand Off: a cheap model writes a note from a long chat and a fresh session continues from it
 - A warning before continuing a large chat whose prompt cache has expired
 - `threadhaven-stats` (`make stats`): a local report of context usage, cold cache rebuilds and simulated compaction savings
