@@ -6,6 +6,8 @@ struct SessionDetail: View {
     @State private var messages: [ChatMessage] = []
     @State private var loading = true
 
+    static let coldCacheWarningTokens = 50_000
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -44,6 +46,16 @@ struct SessionDetail: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
             }
+            TimelineView(.periodic(from: .now, by: 30)) { context in
+                if session.isCacheCold(at: context.date), let meta = session.meta, meta.contextTokens >= Self.coldCacheWarningTokens {
+                    ColdCacheBanner(session: session, tokens: meta.contextTokens)
+                }
+            }
+            if case .failed(let message) = store.handoffs[session.id] {
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.callout)
+                    .foregroundStyle(.red)
+            }
             HStack(spacing: 16) {
                 if let meta = session.meta {
                     ContextGauge(tokens: meta.contextTokens, window: meta.contextWindow)
@@ -78,6 +90,7 @@ struct SessionDetail: View {
                 }
                 .disabled(!TerminalBridge.canSend(to: session))
                 .help(String(localized: "Sends /compact to this chat"))
+                HandoffButton(session: session)
             } else {
                 Button {
                     store.resume(session.id)
@@ -86,6 +99,7 @@ struct SessionDetail: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(session.cwd.isEmpty)
+                HandoffButton(session: session)
             }
             Menu {
                 SessionActions(session: session)
@@ -129,6 +143,49 @@ struct SessionDetail: View {
         }.value
         messages = result
         loading = false
+    }
+}
+
+struct HandoffButton: View {
+    @Environment(SessionStore.self) private var store
+    let session: Session
+
+    var body: some View {
+        let running = store.handoffs[session.id] == .running
+        Button {
+            store.handOff(session.id)
+        } label: {
+            if running {
+                ProgressView().controlSize(.small)
+            } else {
+                Label(String(localized: "Hand Off"), systemImage: "arrow.uturn.right.circle")
+            }
+        }
+        .disabled(running || session.cwd.isEmpty)
+        .help(String(localized: "Writes a handoff note with a cheap model and continues in a fresh chat"))
+    }
+}
+
+struct ColdCacheBanner: View {
+    @Environment(SessionStore.self) private var store
+    let session: Session
+    let tokens: Int
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: "snowflake")
+                .foregroundStyle(.blue)
+            Text("The prompt cache of this chat has expired, so the next message re-reads all \(ContextGauge.short(tokens)) tokens at full price. Compact it or hand off to a fresh chat first.")
+                .font(.callout)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            if TerminalBridge.canSend(to: session) {
+                Button(String(localized: "Compact")) { store.compact(session.id) }
+            }
+            HandoffButton(session: session)
+        }
+        .padding(10)
+        .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
     }
 }
 
