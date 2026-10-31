@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import ThreadHaven
+@testable import ThreadHavenCore
 
 struct TokenStatsTests {
     let stats = TokenStats.analyze(
