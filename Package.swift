@@ -10,5 +10,11 @@ let package = Package(
             name: "ThreadHaven",
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
+        .testTarget(
+            name: "ThreadHavenTests",
+            dependencies: ["ThreadHaven"],
+            resources: [.copy("Fixtures")],
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
     ]
 )
