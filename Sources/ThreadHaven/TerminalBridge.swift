@@ -89,21 +89,42 @@ enum TerminalBridge {
 
     @discardableResult
     static func send(_ text: String, to session: Session) -> Bool {
-        guard canSend(to: session), let bundle = session.terminalBundle, let tty = session.live?.tty else { return false }
+        guard canSend(to: session), let bundle = session.terminalBundle, let tty = session.live?.tty,
+              let app = TerminalApp(rawValue: bundle) else { return false }
         let flat = text
             .components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
             .joined(separator: " ")
-        let body = escape(flat)
+        guard let source = sendScript(flat, app: app, tty: tty) else { return false }
+        return run(source)
+    }
+
+    static let agentProcessNames = ["claude", "node", "codex"]
+
+    private static var foregroundCheck: String {
+        let names = agentProcessNames.map { "\"\($0)\"" }.joined(separator: ", ")
+        return """
+        if n is "" then return false
+                        if n is not in {\(names)} and character 1 of n is not in "0123456789" then return false
+        """
+    }
+
+    static func sendScript(_ text: String, app: TerminalApp, tty: String) -> String? {
+        guard tty.allSatisfy({ $0.isLetter || $0.isNumber }) else { return nil }
+        let body = escape(text)
         let dev = "/dev/" + tty
-        switch TerminalApp(rawValue: bundle) {
+        switch app {
         case .terminal:
-            return run("""
-            tell application id "\(bundle)"
+            return """
+            tell application id "\(app.rawValue)"
                 repeat with w in windows
                     repeat with t in tabs of w
                         if tty of t is "\(dev)" then
+                            set p to processes of t
+                            if (count of p) is 0 then return false
+                            set n to last item of p
+                            \(foregroundCheck)
                             do script "\(body)" in t
                             return true
                         end if
@@ -111,14 +132,17 @@ enum TerminalBridge {
                 end repeat
             end tell
             return false
-            """)
+            """
         case .iterm:
-            return run("""
-            tell application id "\(bundle)"
+            return """
+            tell application id "\(app.rawValue)"
                 repeat with w in windows
                     repeat with t in tabs of w
                         repeat with s in sessions of t
                             if tty of s is "\(dev)" then
+                                tell s to set n to (variable named "jobName")
+                                if n is missing value then return false
+                                \(foregroundCheck)
                                 tell s to write text "\(body)"
                                 return true
                             end if
@@ -127,9 +151,9 @@ enum TerminalBridge {
                 end repeat
             end tell
             return false
-            """)
-        default:
-            return false
+            """
+        case .ghostty:
+            return nil
         }
     }
 

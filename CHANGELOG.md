@@ -30,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Security
 
+- Text is typed into a terminal tab only after the same AppleScript confirms that Claude Code is its foreground process
 - Summaries and prompt polishing run the claude CLI without tools, MCP servers or skills, and leave no session behind
 - The hook no longer stores prompt text, and ThreadHaven files are readable only by your user account
 - Terminal and app identifiers from the environment are sanitized before they are used
