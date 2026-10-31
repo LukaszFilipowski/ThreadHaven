@@ -13,12 +13,19 @@ enum ClaudeCLI {
         }
     }
 
+    static let isolationArguments = [
+        "--tools", "",
+        "--strict-mcp-config",
+        "--disable-slash-commands",
+        "--no-session-persistence",
+    ]
+
     static func run(_ instruction: String, input: String, model: String) async throws -> String {
         try await Task.detached(priority: .userInitiated) {
             guard let claude = resolvePath() else { throw Failure.notFound }
             let p = Process()
             p.executableURL = URL(fileURLWithPath: claude)
-            p.arguments = ["-p", "--model", model, "--strict-mcp-config", instruction]
+            p.arguments = ["-p", "--model", model] + isolationArguments + [instruction]
             p.currentDirectoryURL = FileManager.default.temporaryDirectory
             let stdin = Pipe()
             let output = Pipe()
