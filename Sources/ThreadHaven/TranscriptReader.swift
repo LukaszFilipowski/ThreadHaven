@@ -123,7 +123,7 @@ enum TranscriptReader {
         return Array(out.suffix(limit))
     }
 
-    private static func userText(_ obj: [String: Any]) -> String? {
+    static func userText(_ obj: [String: Any]) -> String? {
         guard let msg = obj["message"] as? [String: Any] else { return nil }
         if let s = msg["content"] as? String { return s.trimmingCharacters(in: .whitespacesAndNewlines) }
         if let blocks = msg["content"] as? [[String: Any]] {
@@ -147,7 +147,7 @@ enum TranscriptReader {
         return (try? h.read(upToCount: Int(min(bytes, size)))) ?? Data()
     }
 
-    private static func lines(_ data: Data) -> [Data] {
+    static func lines(_ data: Data) -> [Data] {
         data.split(separator: 0x0A).map { Data($0) }
     }
 
@@ -155,7 +155,7 @@ enum TranscriptReader {
         line.range(of: Data(needle.utf8)) != nil
     }
 
-    private static func json(_ line: Data) -> [String: Any]? {
+    static func json(_ line: Data) -> [String: Any]? {
         try? JSONSerialization.jsonObject(with: line) as? [String: Any]
     }
 }

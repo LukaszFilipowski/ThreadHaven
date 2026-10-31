@@ -69,6 +69,7 @@
 "Stop" = "Stop";
 "Terminal for new chats" = "Terminal dla nowych czatów";
 "The claude command was not found in your login shell PATH." = "Nie znaleziono polecenia claude w PATH powłoki logowania.";
+"This chat has no messages to hand off." = "Ten czat nie ma wiadomości do przekazania.";
 "ThreadHaven needs a small Claude Code hook to know when a chat is working, waiting for approval or done. Your existing hooks are kept and settings.json is backed up first." = "ThreadHaven potrzebuje małego hooka Claude Code, żeby wiedzieć, czy czat pracuje, czeka na zgodę, czy skończył. Twoje obecne hooki zostają, a settings.json jest najpierw kopiowany.";
 "Threshold" = "Próg";
 "Turn a rough note into a clean prompt with Claude (%@)" = "Zamień luźną notatkę w czysty prompt za pomocą Claude (%@)";
