@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=ThreadHaven
+Comment=Keep track of your Claude Code and Codex sessions
+Exec=threadhaven
+Icon=app.threadhaven.ThreadHaven
+Terminal=false
+Categories=Development;Utility;
+Keywords=Claude;Codex;AI;Chat;Session;
+StartupNotify=true

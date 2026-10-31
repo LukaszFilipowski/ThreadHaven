@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>app.threadhaven.ThreadHaven</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>ThreadHaven</name>
+  <summary>Keep track of your Claude Code and Codex sessions</summary>
+  <developer id="app.threadhaven">
+    <name>ThreadHaven contributors</name>
+  </developer>
+  <description>
+    <p>ThreadHaven lists your recent Claude Code and Codex CLI sessions with their project and context usage, shows the latest messages and token statistics of a session, and resumes it in your terminal.</p>
+    <p>Transcripts are only read, never modified, and nothing leaves your computer.</p>
+  </description>
+  <launchable type="desktop-id">app.threadhaven.ThreadHaven.desktop</launchable>
+  <url type="homepage">https://github.com/LukaszFilipowski/ThreadHaven</url>
+  <url type="bugtracker">https://github.com/LukaszFilipowski/ThreadHaven/issues</url>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.1.0" date="2026-10-31"/>
+  </releases>
+</component>
