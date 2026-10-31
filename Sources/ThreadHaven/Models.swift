@@ -37,6 +37,7 @@ struct TranscriptMeta: Sendable {
     var lastPrompt: String?
     var model: String?
     var contextTokens: Int = 0
+    var baselineContext: Int?
     var contextWindow: Int = 200_000
     var lastReplyAt: Date?
     var cacheTTL: TimeInterval = 300

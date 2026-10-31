@@ -29,6 +29,31 @@ struct TranscriptReaderTests {
         #expect(meta.cacheTTL == 3600)
     }
 
+    @Test func baselineContextComesFromFirstMainThreadReply() throws {
+        #expect(try meta().baselineContext == 45_010)
+    }
+
+    @Test func baselineContextSkipsSidechainsAndStaysNilWithoutReplies() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let user = #"{"type":"user","isSidechain":false,"message":{"role":"user","content":"Hello"},"cwd":"/tmp/demo"}"#
+        let sidechain = #"{"type":"assistant","isSidechain":true,"message":{"usage":{"input_tokens":5,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}"#
+        let reply = #"{"type":"assistant","isSidechain":false,"message":{"usage":{"input_tokens":3,"cache_read_input_tokens":0,"cache_creation_input_tokens":21000}}}"#
+        let later = #"{"type":"assistant","isSidechain":false,"message":{"usage":{"input_tokens":1,"cache_read_input_tokens":30000,"cache_creation_input_tokens":500}}}"#
+
+        func readMeta(_ lines: [String]) throws -> TranscriptMeta {
+            let url = dir.appendingPathComponent(UUID().uuidString + ".jsonl")
+            try (lines.joined(separator: "\n") + "\n").write(to: url, atomically: true, encoding: .utf8)
+            return TranscriptReader.readMeta(url: url, stamp: try #require(TranscriptReader.stamp(of: url)))
+        }
+
+        let replied = try readMeta([user, sidechain, reply, later])
+        #expect(replied.baselineContext == 21_003)
+        #expect(replied.contextTokens == 30_501)
+        #expect(try readMeta([user]).baselineContext == nil)
+    }
+
     @Test func recentMessagesSkipCommandsToolResultsAndSidechains() {
         let messages = TranscriptReader.recentMessages(path: url.path)
         #expect(messages.map(\.text) == [

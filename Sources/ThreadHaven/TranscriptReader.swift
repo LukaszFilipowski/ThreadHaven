@@ -48,10 +48,7 @@ enum TranscriptReader {
             if !foundUsage, contains(line, #""type":"assistant""#), let obj = json(line),
                obj["isSidechain"] as? Bool != true,
                let msg = obj["message"] as? [String: Any], let usage = msg["usage"] as? [String: Any] {
-                let input = usage["input_tokens"] as? Int ?? 0
-                let read = usage["cache_read_input_tokens"] as? Int ?? 0
-                let created = usage["cache_creation_input_tokens"] as? Int ?? 0
-                meta.contextTokens = input + read + created
+                meta.contextTokens = context(of: usage)
                 meta.model = (obj["requestedModel"] as? String) ?? (msg["model"] as? String)
                 meta.lastReplyAt = (obj["timestamp"] as? String).flatMap(parseDate)
                 foundUsage = true
@@ -85,7 +82,7 @@ enum TranscriptReader {
             if foundUsage, foundTTL, aiTitle != nil, meta.cwd != nil, meta.entrypoint != nil { break }
         }
 
-        if aiTitle == nil || meta.cwd == nil || meta.firstPrompt == nil {
+        if aiTitle == nil || meta.cwd == nil || meta.firstPrompt == nil || meta.baselineContext == nil {
             let head = stamp.size > 1_000_000 ? readChunk(url: url, fromEnd: false, bytes: 300_000) : tail
             for line in lines(head) {
                 if aiTitle == nil, contains(line, #""ai-title""#), let obj = json(line) {
@@ -99,7 +96,12 @@ enum TranscriptReader {
                         meta.firstPrompt = text.replacingOccurrences(of: "\n", with: " ")
                     }
                 }
-                if aiTitle != nil, meta.cwd != nil, meta.firstPrompt != nil { break }
+                if meta.baselineContext == nil, contains(line, #""type":"assistant""#), let obj = json(line),
+                   obj["isSidechain"] as? Bool != true,
+                   let usage = (obj["message"] as? [String: Any])?["usage"] as? [String: Any] {
+                    meta.baselineContext = context(of: usage)
+                }
+                if aiTitle != nil, meta.cwd != nil, meta.firstPrompt != nil, meta.baselineContext != nil { break }
             }
         }
 
@@ -107,6 +109,12 @@ enum TranscriptReader {
         let model = meta.model ?? ""
         meta.contextWindow = (model.contains("[1m]") || meta.contextTokens > 200_000) ? 1_000_000 : 200_000
         return meta
+    }
+
+    private static func context(of usage: [String: Any]) -> Int {
+        ["input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"]
+            .map { usage[$0] as? Int ?? 0 }
+            .reduce(0, +)
     }
 
     static func parseDate(_ string: String) -> Date? {
