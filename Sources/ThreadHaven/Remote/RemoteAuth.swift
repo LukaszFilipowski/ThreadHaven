@@ -57,8 +57,17 @@ protocol RemoteSecretStore: AnyObject {
     func loadDevices() -> [RemoteDevice]
     func save(_ device: RemoteDevice) throws
     func delete(id: String)
+    func deleteAllDevices()
     func loadVAPIDKey() -> Data?
     func saveVAPIDKey(_ key: Data) throws
+}
+
+extension RemoteDevice {
+    static func decode(_ data: Data) -> RemoteDevice? {
+        guard let device = try? JSONDecoder().decode(RemoteDevice.self, from: data),
+              Data(base64URL: device.tokenHash)?.count == 32 else { return nil }
+        return device
+    }
 }
 
 final class MemorySecretStore: RemoteSecretStore {
@@ -68,6 +77,7 @@ final class MemorySecretStore: RemoteSecretStore {
     func loadDevices() -> [RemoteDevice] { devices.values.sorted { $0.created < $1.created } }
     func save(_ device: RemoteDevice) throws { devices[device.id] = device }
     func delete(id: String) { devices[id] = nil }
+    func deleteAllDevices() { devices.removeAll() }
     func loadVAPIDKey() -> Data? { vapid }
     func saveVAPIDKey(_ key: Data) throws { vapid = key }
 }
@@ -93,11 +103,26 @@ final class KeychainSecretStore: RemoteSecretStore {
         var result: CFTypeRef?
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
               let items = result as? [[String: Any]] else { return [] }
-        let decoder = JSONDecoder()
-        return items
-            .compactMap { $0[kSecAttrAccount as String] as? String }
-            .compactMap { read(service: deviceService, account: $0).flatMap { try? decoder.decode(RemoteDevice.self, from: $0) } }
-            .sorted { $0.created < $1.created }
+        var devices: [RemoteDevice] = []
+        for account in items.compactMap({ $0[kSecAttrAccount as String] as? String }) {
+            if let device = read(service: deviceService, account: account).flatMap(RemoteDevice.decode) {
+                devices.append(device)
+            } else {
+                remove(service: deviceService, account: account)
+            }
+        }
+        return devices.sorted { $0.created < $1.created }
+    }
+
+    func deleteAllDevices() {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: deviceService,
+        ]
+        var remaining = 1_000
+        while remaining > 0, SecItemDelete(query as CFDictionary) == errSecSuccess {
+            remaining -= 1
+        }
     }
 
     func save(_ device: RemoteDevice) throws {
@@ -274,7 +299,7 @@ final class RemoteAuthenticator {
     }
 
     func revokeAll() {
-        for device in store.loadDevices() { store.delete(id: device.id) }
+        store.deleteAllDevices()
         for device in devices { store.delete(id: device.id) }
         devices.removeAll()
         lastUsed.removeAll()

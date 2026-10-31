@@ -59,6 +59,25 @@ struct RemoteAuthTests {
         #expect(!encoded.contains(paired.token))
     }
 
+    @Test func legacyItemsWithPlainTokensAreNotLoaded() throws {
+        let legacy = #"{"id":"A","name":"Device 1","token":"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ","created":0}"#
+        #expect(RemoteDevice.decode(Data(legacy.utf8)) == nil)
+        let badHash = #"{"id":"A","name":"Device 1","tokenHash":"short","created":0}"#
+        #expect(RemoteDevice.decode(Data(badHash.utf8)) == nil)
+        let current = RemoteDevice(id: "B", name: "Device 2", tokenHash: RemoteToken.hash(RemoteToken.generate()), created: Date(timeIntervalSince1970: 0))
+        #expect(RemoteDevice.decode(try JSONEncoder().encode(current)) == current)
+    }
+
+    @Test func revokeAllClearsDevicesTheAuthenticatorDoesNotKnow() throws {
+        let store = MemorySecretStore()
+        let auth = authenticator(store)
+        _ = try auth.pair(name: "Device 1")
+        try store.save(RemoteDevice(id: "stray", name: "Stray", tokenHash: RemoteToken.hash(RemoteToken.generate()), created: Date()))
+        auth.revokeAll()
+        #expect(store.devices.isEmpty)
+        #expect(auth.devices.isEmpty)
+    }
+
     @Test func acceptsPairedDevicesAndRejectsOthers() throws {
         let auth = authenticator()
         let paired = try auth.pair(name: "Device 1")
