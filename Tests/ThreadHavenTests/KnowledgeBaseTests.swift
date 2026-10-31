@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 @testable import ThreadHaven
+import ThreadHavenCore
 
 struct KnowledgeBaseTests {
     let home: URL

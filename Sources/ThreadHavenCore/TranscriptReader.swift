@@ -1,22 +1,21 @@
 import Foundation
-import ThreadHavenCore
 
-enum TranscriptReader {
-    static let projectsDir = FileManager.default.homeDirectoryForCurrentUser
+public enum TranscriptReader {
+    public static let projectsDir = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent(".claude/projects", isDirectory: true)
 
-    struct FileStamp: Sendable, Equatable {
-        let modified: Date
-        let size: UInt64
+    public struct FileStamp: Sendable, Equatable {
+        public let modified: Date
+        public let size: UInt64
     }
 
-    static func stamp(of url: URL) -> FileStamp? {
+    public static func stamp(of url: URL) -> FileStamp? {
         guard let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]),
               let modified = values.contentModificationDate else { return nil }
         return FileStamp(modified: modified, size: UInt64(values.fileSize ?? 0))
     }
 
-    static func listTranscripts(since: Date) -> [URL: FileStamp] {
+    public static func listTranscripts(since: Date) -> [URL: FileStamp] {
         let fm = FileManager.default
         var result: [URL: FileStamp] = [:]
         let keys: [URLResourceKey] = [.contentModificationDateKey, .fileSizeKey, .isDirectoryKey]
@@ -32,7 +31,7 @@ enum TranscriptReader {
         return result
     }
 
-    static func readMeta(url: URL, stamp: FileStamp) -> TranscriptMeta {
+    public static func readMeta(url: URL, stamp: FileStamp) -> TranscriptMeta {
         var meta = TranscriptMeta(
             sessionId: url.deletingPathExtension().lastPathComponent,
             path: url.path,
@@ -118,11 +117,11 @@ enum TranscriptReader {
             .reduce(0, +)
     }
 
-    static func parseDate(_ string: String) -> Date? {
+    public static func parseDate(_ string: String) -> Date? {
         try? Date(string, strategy: .iso8601.year().month().day().time(includingFractionalSeconds: true))
     }
 
-    static func recentMessages(path: String, limit: Int = 60) -> [ChatMessage] {
+    public static func recentMessages(path: String, limit: Int = 60) -> [ChatMessage] {
         let url = URL(fileURLWithPath: path)
         let chunk = readChunk(url: url, fromEnd: true, bytes: 3_000_000)
         var out: [ChatMessage] = []

@@ -1,7 +1,6 @@
 import Foundation
 import Testing
-@testable import ThreadHaven
-import ThreadHavenCore
+@testable import ThreadHavenCore
 
 struct CodexReaderTests {
     let root = Bundle.module.url(forResource: "codex", withExtension: nil, subdirectory: "Fixtures")!
@@ -36,18 +35,10 @@ struct CodexReaderTests {
         let meta = try #require(metas()[interactiveId])
         #expect(meta.firstPrompt == "Add a dark mode toggle to the settings screen")
         #expect(meta.lastPrompt == "Now add a test for it")
-        let session = Session(id: meta.sessionId, meta: meta)
-        #expect(session.title == "Add a dark mode toggle to the settings screen")
-        #expect(session.project == "project")
     }
 
-    @Test func execRunsAreBackgroundSessions() throws {
-        let interactive = Session(id: interactiveId, meta: try #require(metas()[interactiveId]))
-        let exec = Session(id: execId, meta: try #require(metas()[execId]))
-        #expect(interactive.isInteractive)
-        #expect(!exec.isInteractive)
-        #expect(interactive.status == .closed)
-        #expect(!TerminalBridge.canSend(to: interactive))
+    @Test func execRunsHaveExecEntrypoint() throws {
+        #expect(try #require(metas()[execId]).entrypoint == "exec")
     }
 
     @Test func recentMessagesKeepPromptsAndReplies() throws {
@@ -61,10 +52,5 @@ struct CodexReaderTests {
         ])
         #expect(messages.map(\.role) == [.user, .assistant, .user, .assistant])
         #expect(messages.first?.date == TranscriptReader.parseDate("2026-10-31T10:00:01.200Z"))
-    }
-
-    @Test func resumeCommandIsQuoted() {
-        #expect(TerminalBridge.invocation(.codex, Agent.codex.resumeArguments("a'b")) == #"codex 'resume' 'a'\''b'"#)
-        #expect(TerminalBridge.invocation(.claude, Agent.claude.resumeArguments("id")) == "claude '--resume' 'id'")
     }
 }

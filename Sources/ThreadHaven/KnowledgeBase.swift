@@ -1,4 +1,5 @@
 import Foundation
+import ThreadHavenCore
 
 struct KnowledgeItem: Identifiable, Hashable, Sendable {
     enum Kind: Sendable, CaseIterable {
