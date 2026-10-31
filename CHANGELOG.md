@@ -9,6 +9,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 
 - Universal app build on CI runners
+- Hook events from concurrent sessions no longer get lost
+- Hook installation works with home folders that contain spaces and keeps unrelated hooks, symlinks and permissions in settings.json
+- Dictation no longer brings back text after it was sent or polished
+- Running chats are detected for Claude Code installed through npm
+- A chat whose terminal tab was reused by a new chat no longer shows as running
+- Only approval and question prompts mark a chat as waiting for you
+- The attention dot clears on the chat you are looking at
+- A first message starting with a dash is no longer read as a command-line option
 
 ## [0.1.0] - 2026-10-31
 
