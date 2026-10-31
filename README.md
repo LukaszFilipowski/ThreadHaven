@@ -90,9 +90,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and the release process, a
 
 ## Roadmap
 
-- Codex CLI sessions
-- Global hotkey for a quick switcher
-- Signed and notarized releases with Homebrew cask
+Next up are token savings (0.2), a workspace manager for skills, MCP servers and project knowledge (0.3) and team features (0.4), followed by Linux, iPhone and Android apps. See [ROADMAP.md](ROADMAP.md) for details.
 
 ## License
 
