@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import ThreadHaven
+@testable import ThreadHavenCore
 
 struct TranscriptReaderTests {
     let url = Bundle.module.url(forResource: "session", withExtension: "jsonl", subdirectory: "Fixtures")!

@@ -1,4 +1,5 @@
 import SwiftUI
+import ThreadHavenCore
 
 struct SessionDetail: View {
     @Environment(SessionStore.self) private var store

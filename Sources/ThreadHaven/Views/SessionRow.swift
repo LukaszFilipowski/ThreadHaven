@@ -1,4 +1,5 @@
 import SwiftUI
+import ThreadHavenCore
 
 struct SessionRow: View {
     let session: Session

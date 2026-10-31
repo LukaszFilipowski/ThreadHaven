@@ -1,4 +1,5 @@
 import AppKit
+import ThreadHavenCore
 
 enum TerminalApp: String, CaseIterable, Identifiable {
     case terminal = "com.apple.Terminal"

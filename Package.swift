@@ -39,7 +39,6 @@ package.targets += [
     .testTarget(
         name: "ThreadHavenTests",
         dependencies: ["ThreadHaven"],
-        resources: [.copy("Fixtures")],
         swiftSettings: [.swiftLanguageMode(.v5)]
     ),
 ]

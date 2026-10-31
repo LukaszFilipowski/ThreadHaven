@@ -1,10 +1,10 @@
 import Foundation
 
-enum CodexReader {
-    static let sessionsDir = FileManager.default.homeDirectoryForCurrentUser
+public enum CodexReader {
+    public static let sessionsDir = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent(".codex/sessions", isDirectory: true)
 
-    static func listSessions(since: Date, in root: URL = sessionsDir) -> [URL: TranscriptReader.FileStamp] {
+    public static func listSessions(since: Date, in root: URL = sessionsDir) -> [URL: TranscriptReader.FileStamp] {
         var result: [URL: TranscriptReader.FileStamp] = [:]
         let keys: [URLResourceKey] = [.contentModificationDateKey, .fileSizeKey]
         guard let files = FileManager.default.enumerator(at: root, includingPropertiesForKeys: keys, options: .skipsHiddenFiles) else {
@@ -20,7 +20,7 @@ enum CodexReader {
         url.pathExtension == "jsonl" && url.lastPathComponent.hasPrefix("rollout-")
     }
 
-    static func readMeta(url: URL, stamp: TranscriptReader.FileStamp) -> TranscriptMeta {
+    public static func readMeta(url: URL, stamp: TranscriptReader.FileStamp) -> TranscriptMeta {
         var meta = TranscriptMeta(
             agent: .codex,
             sessionId: sessionId(fromFileName: url),
@@ -66,7 +66,7 @@ enum CodexReader {
         return meta
     }
 
-    static func recentMessages(path: String, limit: Int = 60) -> [ChatMessage] {
+    public static func recentMessages(path: String, limit: Int = 60) -> [ChatMessage] {
         let chunk = TranscriptReader.readChunk(url: URL(fileURLWithPath: path), fromEnd: true, bytes: 3_000_000)
         var out: [ChatMessage] = []
         for line in TranscriptReader.lines(chunk) {
