@@ -70,7 +70,7 @@ enum WorkspaceInventory {
         String(path.map { $0.isASCII && ($0.isLetter || $0.isNumber) ? $0 : "-" })
     }
 
-    private static func claudeMdFiles(claudeDir: URL, project: URL?) -> [InventoryItem] {
+    static func claudeMdFiles(claudeDir: URL, project: URL?) -> [InventoryItem] {
         var candidates: [(URL, InventoryItem.Scope)] = [(claudeDir.appendingPathComponent("CLAUDE.md"), .user)]
         if let project {
             candidates.append((project.appendingPathComponent(".claude/CLAUDE.md"), .project))
@@ -90,11 +90,15 @@ enum WorkspaceInventory {
         }
     }
 
-    private static func memory(claudeDir: URL, project: URL) -> [InventoryItem] {
-        let url = claudeDir
+    static func memoryFolder(claudeDir: URL, project: URL) -> URL {
+        claudeDir
             .appendingPathComponent("projects", isDirectory: true)
             .appendingPathComponent(encodedProjectName(project.path), isDirectory: true)
-            .appendingPathComponent("memory/MEMORY.md")
+            .appendingPathComponent("memory", isDirectory: true)
+    }
+
+    private static func memory(claudeDir: URL, project: URL) -> [InventoryItem] {
+        let url = memoryFolder(claudeDir: claudeDir, project: project).appendingPathComponent("MEMORY.md")
         guard let data = read(url) else { return [] }
         let loaded = String(decoding: data, as: UTF8.self)
             .split(separator: "\n", omittingEmptySubsequences: false)
