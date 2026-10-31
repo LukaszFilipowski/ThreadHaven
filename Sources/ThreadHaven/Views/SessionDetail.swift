@@ -251,6 +251,12 @@ struct MessageBubble: View {
 
     private var rendered: AttributedString {
         let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        return (try? AttributedString(markdown: message.text, options: options)) ?? AttributedString(message.text)
+        guard var text = try? AttributedString(markdown: message.text, options: options) else {
+            return AttributedString(message.text)
+        }
+        for run in text.runs where run.link != nil && !["http", "https"].contains(run.link?.scheme?.lowercased()) {
+            text[run.range].link = nil
+        }
+        return text
     }
 }
