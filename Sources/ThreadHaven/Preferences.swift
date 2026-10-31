@@ -16,6 +16,7 @@ enum Preferences {
     static let remotePreviews = "remotePreviews"
     static let remoteAllowlist = "remoteAllowlist"
     static let remoteDeviceCounter = "remoteDeviceCounter"
+    static let remotePushContact = "remotePushContact"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [

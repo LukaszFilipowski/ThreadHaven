@@ -24,6 +24,7 @@ final class RemoteAccess {
     private(set) var rejectedRequests = 0
     private(set) var pairing: Pairing?
     private(set) var webAppAvailable = false
+    private(set) var allowedLogins: [String] = []
 
     @ObservationIgnored private let store: SessionStore
     @ObservationIgnored private let auth: RemoteAuthenticator
@@ -95,8 +96,8 @@ final class RemoteAccess {
         let counter = defaults.integer(forKey: Preferences.remoteDeviceCounter) + 1
         defaults.set(counter, forKey: Preferences.remoteDeviceCounter)
         do {
-            let device = try auth.pair(name: String(localized: "Device \(counter)"))
-            pairing = Pairing(deviceId: device.id, url: "https://\(host)/#token=\(device.token)")
+            let paired = try auth.pair(name: String(localized: "Device \(counter)"))
+            pairing = Pairing(deviceId: paired.device.id, url: "https://\(host)/#token=\(paired.token)")
             markActivity()
         } catch {
             problem = error.localizedDescription
@@ -116,6 +117,7 @@ final class RemoteAccess {
 
     func applyAllowlist(_ text: String) {
         auth.allowlist = RemoteAuthenticator.parseAllowlist(text)
+        syncDevices()
     }
 
     func refreshProbe() {
@@ -126,10 +128,20 @@ final class RemoteAccess {
         }
     }
 
+    private var hasSavedPort: Bool {
+        (49_152...65_000).contains(defaults.integer(forKey: Preferences.remotePort))
+    }
+
     private func savedPort() -> UInt16 {
-        let saved = defaults.integer(forKey: Preferences.remotePort)
-        if (49_152...65_000).contains(saved) { return UInt16(saved) }
-        return randomPort()
+        hasSavedPort ? UInt16(defaults.integer(forKey: Preferences.remotePort)) : randomPort()
+    }
+
+    var ownLoginMissing: Bool {
+        allowedLogins.isEmpty
+    }
+
+    var servingWarning: Bool {
+        !devices.isEmpty && !probe.serve.served && !probe.funnelUnknown
     }
 
     private func randomPort() -> UInt16 {
@@ -149,6 +161,10 @@ final class RemoteAccess {
         guard !probe.serve.funneled else {
             return fail(String(localized: "This port is shared with Tailscale Funnel, which would expose it to the internet. Remote access stays off."))
         }
+        guard !probe.funnelUnknown else {
+            return fail(String(localized: "ThreadHaven could not check Tailscale Funnel for this port, so remote access stays off."))
+        }
+        auth.ownLogin = probe.login
         loadVAPIDKey()
         server.start(port: port) { [weak self] result in
             Task { @MainActor in self?.listenerChanged(result, port: port) }
@@ -168,6 +184,9 @@ final class RemoteAccess {
             startTimers()
             if auth.devices.isEmpty { pairDevice() }
             refreshProbe()
+        case (.failure, .starting) where hasSavedPort:
+            defaults.removeObject(forKey: Preferences.remotePort)
+            disable(reason: String(localized: "Port \(Int(port)) is used by another app. Remote access was turned off and every device was signed out. Turn it on again to use a new port, then run the new tailscale serve command."))
         case (.failure, .starting) where attempts < 5:
             attempts += 1
             let next = randomPort()
@@ -190,7 +209,11 @@ final class RemoteAccess {
         self.probe = probe
         if probe.serve.funneled {
             disable(reason: String(localized: "Remote access was turned off because Tailscale Funnel exposes its port to the internet."))
+        } else if probe.funnelUnknown {
+            disable(reason: String(localized: "Remote access was turned off because ThreadHaven could not check Tailscale Funnel."))
         } else if let port {
+            auth.ownLogin = probe.login
+            syncDevices()
             router.allowedHosts = RemoteRouter.allowedHosts(dnsName: probe.dnsName, port: port)
         }
     }
@@ -209,6 +232,7 @@ final class RemoteAccess {
         devices = auth.devices
         lastUsed = auth.lastUsed
         rejectedRequests = auth.rejected
+        allowedLogins = auth.effectiveAllowlist
     }
 
     private func markActivity() {
@@ -308,7 +332,8 @@ final class RemoteAccess {
     }
 
     private func push(for id: String) {
-        guard let key = vapidKey, let host = probe.dnsName, let session = store.session(id) else { return }
+        guard let key = vapidKey, let session = store.session(id) else { return }
+        let subject = Self.pushSubject(defaults.string(forKey: Preferences.remotePushContact))
         var body = session.status.label
         if defaults.bool(forKey: Preferences.remotePreviews), let message = session.live?.message, !message.isEmpty {
             body = String(message.prefix(160))
@@ -320,12 +345,22 @@ final class RemoteAccess {
         ])) ?? Data()
         for device in auth.devices {
             guard let subscription = device.push,
-                  let request = try? WebPush.request(payload: payload, subscription: subscription, vapidKey: key, subject: "https://\(host)") else { continue }
+                  let request = try? WebPush.request(payload: payload, subscription: subscription, vapidKey: key, subject: subject) else { continue }
             let deviceId = device.id
             Task {
                 if await WebPush.send(request) == .gone { removeSubscription(deviceId, subscription) }
             }
         }
+    }
+
+    nonisolated static let defaultPushSubject = "mailto:push@threadhaven.invalid"
+
+    nonisolated static func pushSubject(_ contact: String?) -> String {
+        let trimmed = (contact ?? "").trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, trimmed.utf8.count <= 200, !trimmed.contains(" ") else { return defaultPushSubject }
+        if trimmed.hasPrefix("mailto:") || trimmed.hasPrefix("https://") { return trimmed }
+        if trimmed.contains("@") { return "mailto:" + trimmed }
+        return defaultPushSubject
     }
 
     private func subscribe(_ deviceId: String, _ subscription: PushSubscription) {
@@ -354,7 +389,7 @@ extension RemoteAccess: RemoteBackend {
                 agent: session.agent.rawValue,
                 contextPercent: Int((session.contextFraction * 100).rounded()),
                 lastActivity: session.lastActivity,
-                canSend: TerminalBridge.canSend(to: session)
+                canSend: TerminalBridge.canSend(to: session) && session.status != .needsInput
             )
         }
     }
@@ -371,6 +406,7 @@ extension RemoteAccess: RemoteBackend {
 
     func remotePrompt(_ text: String, to id: String, from device: RemoteDevice) -> PromptOutcome {
         guard let session = store.session(id), remoteSessions().contains(where: { $0.id == id }) else { return .unknownSession }
+        guard session.status != .needsInput else { return .awaitingApproval }
         guard TerminalBridge.canSend(to: session), store.send(text, to: id) else { return .notSendable }
         Notifier.shared.post(
             sessionId: "remote." + id,

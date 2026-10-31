@@ -46,7 +46,7 @@ struct PushSubscription: Codable, Sendable, Equatable {
 struct RemoteDevice: Codable, Sendable, Identifiable, Equatable {
     var id: String
     var name: String
-    var token: String
+    var tokenHash: String
     var created: Date
     var login: String?
     var platform: String?
@@ -182,11 +182,15 @@ struct FailureLimiter {
         var recent = (failures[key] ?? []).filter { now.timeIntervalSince($0) < window }
         recent.append(now)
         if recent.count >= maxFailures {
+            if lockedUntil[key] == nil && lockedUntil.count >= maxKeys { prune(now: now) }
+            if lockedUntil[key] == nil && lockedUntil.count >= maxKeys { lockedUntil.removeAll() }
             lockedUntil[key] = now.addingTimeInterval(lockout)
             recent.removeAll()
         }
         failures[key] = recent
     }
+
+    var lockedKeyCount: Int { lockedUntil.count }
 
     mutating func recordSuccess(_ key: String) {
         failures[key] = nil
@@ -212,6 +216,10 @@ enum RemoteToken {
         return token
     }
 
+    static func hash(_ token: String) -> String {
+        Data(SHA256.hash(data: Data(token.utf8))).base64URLEncoded
+    }
+
     static func constantTimeEquals(_ a: String, _ b: String) -> Bool {
         let x = Array(SHA256.hash(data: Data(a.utf8)))
         let y = Array(SHA256.hash(data: Data(b.utf8)))
@@ -234,6 +242,7 @@ final class RemoteAuthenticator {
     private(set) var rejected = 0
     private(set) var lastRejectedAt: Date?
     var allowlist: [String] = []
+    var ownLogin: String?
     private var limiter = FailureLimiter()
 
     init(store: RemoteSecretStore) {
@@ -245,11 +254,17 @@ final class RemoteAuthenticator {
         devices = store.loadDevices()
     }
 
-    func pair(name: String, now: Date = .now) throws -> RemoteDevice {
-        let device = RemoteDevice(id: UUID().uuidString, name: name, token: RemoteToken.generate(), created: now)
+    func pair(name: String, now: Date = .now) throws -> (device: RemoteDevice, token: String) {
+        let token = RemoteToken.generate()
+        let device = RemoteDevice(id: UUID().uuidString, name: name, tokenHash: RemoteToken.hash(token), created: now)
         try store.save(device)
         devices.append(device)
-        return device
+        return (device, token)
+    }
+
+    var effectiveAllowlist: [String] {
+        if !allowlist.isEmpty { return allowlist }
+        return ownLogin.map { [$0] } ?? []
     }
 
     func revoke(_ id: String) {
@@ -288,25 +303,28 @@ final class RemoteAuthenticator {
     func authenticate(_ request: HTTPRequest, now: Date = .now) -> AuthResult {
         let login = Self.normalizedLogin(request.header("tailscale-user-login"))
         let key = login ?? "local"
-        if limiter.isLocked(key, now: now) {
-            reject(now: now)
-            return .denied(status: 429)
-        }
         guard let token = RemoteToken.bearer(from: request.header("authorization")) else {
-            return fail(key, now: now)
+            reject(now: now)
+            return .denied(status: 401)
         }
+        let presented = RemoteToken.hash(token)
         var match: RemoteDevice?
-        for device in devices where RemoteToken.constantTimeEquals(device.token, token) {
+        for device in devices where RemoteToken.constantTimeEquals(device.tokenHash, presented) {
             match = device
         }
-        guard var device = match else { return fail(key, now: now) }
-        if !allowlist.isEmpty {
-            guard let login, allowlist.contains(login) else { return fail(key, now: now, status: 403) }
+        guard var device = match else {
+            if limiter.isLocked(key, now: now) {
+                reject(now: now)
+                return .denied(status: 429)
+            }
+            return fail(key, now: now)
+        }
+        guard let login, effectiveAllowlist.contains(login) else {
+            reject(now: now)
+            return .denied(status: 403)
         }
         var changed = false
-        if let bound = device.login {
-            guard login == bound else { return fail(key, now: now, status: 403) }
-        } else if let login {
+        if device.login != login {
             device.login = login
             changed = true
         }
@@ -320,10 +338,10 @@ final class RemoteAuthenticator {
         return .allowed(deviceId: device.id)
     }
 
-    private func fail(_ key: String, now: Date, status: Int = 401) -> AuthResult {
+    private func fail(_ key: String, now: Date) -> AuthResult {
         limiter.recordFailure(key, now: now)
         reject(now: now)
-        return .denied(status: status)
+        return .denied(status: 401)
     }
 
     private func reject(now: Date) {

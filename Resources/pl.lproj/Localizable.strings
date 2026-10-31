@@ -187,7 +187,6 @@
 "24 hours" = "24 godziny";
 "Show message text in phone notifications" = "Pokazuj treść wiadomości w powiadomieniach na telefonie";
 "Allowed Tailscale users" = "Dozwoleni użytkownicy Tailscale";
-"Anyone with a paired device" = "Każdy ze sparowanym urządzeniem";
 "Rejected requests since start: %lld" = "Odrzucone żądania od uruchomienia: %lld";
 "Last used %@" = "Ostatnio użyte %@";
 "Not used yet" = "Jeszcze nieużywane";
@@ -201,3 +200,11 @@
 "This port is shared with Tailscale Funnel, which would expose it to the internet. Remote access stays off." = "Ten port jest udostępniony przez Tailscale Funnel, co wystawiłoby go do internetu. Dostęp zdalny pozostaje wyłączony.";
 "Remote access was turned off because Tailscale Funnel exposes its port to the internet." = "Dostęp zdalny został wyłączony, bo Tailscale Funnel wystawia jego port do internetu.";
 "Remote access turned itself off after being idle." = "Dostęp zdalny wyłączył się po okresie bezczynności.";
+"ThreadHaven could not check Tailscale Funnel for this port, so remote access stays off." = "ThreadHaven nie mógł sprawdzić Tailscale Funnel dla tego portu, więc dostęp zdalny pozostaje wyłączony.";
+"Remote access was turned off because ThreadHaven could not check Tailscale Funnel." = "Dostęp zdalny został wyłączony, bo ThreadHaven nie mógł sprawdzić Tailscale Funnel.";
+"Port %lld is used by another app. Remote access was turned off and every device was signed out. Turn it on again to use a new port, then run the new tailscale serve command." = "Port %lld jest zajęty przez inną aplikację. Dostęp zdalny został wyłączony, a wszystkie urządzenia wylogowane. Włącz go ponownie, aby użyć nowego portu, a potem uruchom nowe polecenie tailscale serve.";
+"Paired devices cannot reach this Mac: tailscale serve does not forward to this port. Run the command above." = "Sparowane urządzenia nie mogą połączyć się z tym Makiem: tailscale serve nie przekierowuje na ten port. Uruchom polecenie powyżej.";
+"Only you" = "Tylko Ty";
+"ThreadHaven could not read your Tailscale login, so every request is refused. Enter the allowed tailnet users." = "ThreadHaven nie mógł odczytać Twojego loginu Tailscale, więc każde żądanie jest odrzucane. Wpisz dozwolonych użytkowników tailnetu.";
+"Allowed: %@" = "Dozwoleni: %@";
+"Contact for push services" = "Kontakt dla usług powiadomień push";

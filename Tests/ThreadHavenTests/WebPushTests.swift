@@ -116,4 +116,11 @@ struct WebPushTests {
         #expect(Data(base64URL: "a+b/") == nil)
         #expect(Data(base64URL: "ab c") == nil)
     }
+
+    @Test func pushSubjectIsAMailtoOrHTTPSContact() {
+        #expect(RemoteAccess.pushSubject(nil) == RemoteAccess.defaultPushSubject)
+        #expect(RemoteAccess.pushSubject("someone@example.invalid") == "mailto:someone@example.invalid")
+        #expect(RemoteAccess.pushSubject("https://example.invalid") == "https://example.invalid")
+        #expect(RemoteAccess.pushSubject("not a contact") == RemoteAccess.defaultPushSubject)
+    }
 }

@@ -39,6 +39,7 @@ struct RemoteMessage: Equatable, Sendable {
 enum PromptOutcome: Equatable {
     case sent
     case notSendable
+    case awaitingApproval
     case unknownSession
 }
 
@@ -124,6 +125,14 @@ final class RemoteRouter {
         guard let host = request.header("host")?.lowercased(), allowedHosts.contains(host) else {
             return .response(.error(421, "Unknown host"))
         }
+        if request.header("tailscale-funnel-request") != nil {
+            return .response(.error(403, "Not available through Funnel"))
+        }
+        if request.method == "OPTIONS" {
+            var response = HTTPResponse(status: 204)
+            response.headers.append(("Allow", "GET, HEAD, POST"))
+            return .response(response)
+        }
         let path = request.path
         if Self.staticRoutes[path] != nil {
             guard request.method == "GET" || request.method == "HEAD" else { return .response(methodNotAllowed("GET, HEAD")) }
@@ -131,6 +140,9 @@ final class RemoteRouter {
             return .response(HTTPResponse(status: 200, headers: [("Content-Type", file.contentType), ("Cache-Control", "no-cache")], body: file.data))
         }
         guard path.hasPrefix("/api/") else { return .response(.error(404, "Not found")) }
+        if let site = request.header("sec-fetch-site")?.lowercased(), site != "same-origin", site != "none" {
+            return .response(.error(403, "Cross-site requests are not allowed"))
+        }
 
         let deviceId: String
         switch auth.authenticate(request, now: now) {
@@ -201,6 +213,8 @@ final class RemoteRouter {
             return .json(["sent": true], status: 202)
         case .notSendable:
             return .error(409, "This chat is not running in the foreground of Terminal or iTerm2")
+        case .awaitingApproval:
+            return .error(409, "This chat is waiting for an approval. Answer it on the Mac.")
         case .unknownSession:
             return .error(404, "Unknown chat")
         }

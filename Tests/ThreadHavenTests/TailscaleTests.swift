@@ -8,6 +8,14 @@ struct TailscaleTests {
         #expect(Tailscale.dnsName(fromStatusJSON: Data(json.utf8)) == "example-mac.example-tailnet.ts.net")
     }
 
+    @Test func readsTheLoginOfThisMacsUser() {
+        let json = #"{"Self":{"DNSName":"example-mac.example-tailnet.ts.net.","UserID":12345},"User":{"12345":{"ID":12345,"LoginName":"Alice@Example.invalid"},"999":{"ID":999,"LoginName":"bob@example.invalid"}}}"#
+        #expect(Tailscale.ownLogin(fromStatusJSON: Data(json.utf8)) == "alice@example.invalid")
+        let tagged = #"{"Self":{"UserID":1},"User":{"1":{"LoginName":"tagged-devices"}}}"#
+        #expect(Tailscale.ownLogin(fromStatusJSON: Data(tagged.utf8)) == nil)
+        #expect(Tailscale.ownLogin(fromStatusJSON: Data(#"{"Self":{}}"#.utf8)) == nil)
+    }
+
     @Test func rejectsMissingOrOddNames() {
         #expect(Tailscale.dnsName(fromStatusJSON: Data(#"{"Self":{}}"#.utf8)) == nil)
         #expect(Tailscale.dnsName(fromStatusJSON: Data(#"{"Self":{"DNSName":""}}"#.utf8)) == nil)

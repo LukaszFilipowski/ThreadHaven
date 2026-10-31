@@ -6,6 +6,7 @@ struct RemoteAccessSection: View {
     @AppStorage(Preferences.remoteIdleHours) private var idleHours = 8
     @AppStorage(Preferences.remotePreviews) private var previews = false
     @AppStorage(Preferences.remoteAllowlist) private var allowlist = ""
+    @AppStorage(Preferences.remotePushContact) private var pushContact = ""
 
     var body: some View {
         Section {
@@ -53,6 +54,11 @@ struct RemoteAccessSection: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
+        if remote.servingWarning {
+            Label(String(localized: "Paired devices cannot reach this Mac: tailscale serve does not forward to this port. Run the command above."), systemImage: "exclamationmark.triangle.fill")
+                .font(.caption)
+                .foregroundStyle(.orange)
+        }
         if !remote.webAppAvailable {
             Text("The web app is only included in the app bundle built with make app.")
                 .font(.caption)
@@ -84,8 +90,18 @@ struct RemoteAccessSection: View {
             Text("24 hours").tag(24)
         }
         Toggle(String(localized: "Show message text in phone notifications"), isOn: $previews)
-        TextField(String(localized: "Allowed Tailscale users"), text: $allowlist, prompt: Text("Anyone with a paired device"))
+        TextField(String(localized: "Allowed Tailscale users"), text: $allowlist, prompt: Text("Only you"))
             .onChange(of: allowlist) { _, value in remote.applyAllowlist(value) }
+        if remote.ownLoginMissing {
+            Label(String(localized: "ThreadHaven could not read your Tailscale login, so every request is refused. Enter the allowed tailnet users."), systemImage: "exclamationmark.triangle.fill")
+                .font(.caption)
+                .foregroundStyle(.orange)
+        } else {
+            Text("Allowed: \(remote.allowedLogins.joined(separator: ", "))")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        TextField(String(localized: "Contact for push services"), text: $pushContact, prompt: Text(verbatim: RemoteAccess.defaultPushSubject))
         if remote.rejectedRequests > 0 {
             Text("Rejected requests since start: \(remote.rejectedRequests)")
                 .font(.caption)

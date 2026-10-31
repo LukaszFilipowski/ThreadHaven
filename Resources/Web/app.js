@@ -161,7 +161,8 @@ function renderDetailHeader() {
   const canSend = session.canSend === true;
   $('prompt').disabled = !canSend;
   $('send').disabled = !canSend;
-  if (!canSend) $('composer-note').textContent = 'You can send prompts to chats running in Terminal or iTerm2 on your Mac.';
+  if (session.status === 'needsInput') $('composer-note').textContent = 'This chat is waiting for an approval. Answer it on the Mac.';
+  else if (!canSend) $('composer-note').textContent = 'You can send prompts to chats running in Terminal or iTerm2 on your Mac.';
   else if ($('composer-note').dataset.kind !== 'error') $('composer-note').textContent = '';
 }
 

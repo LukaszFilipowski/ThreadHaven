@@ -34,6 +34,18 @@ enum Tailscale {
         return name
     }
 
+    static func ownLogin(fromStatusJSON data: Data) -> String? {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let me = object["Self"] as? [String: Any],
+              let userId = (me["UserID"] as? NSNumber)?.int64Value,
+              let users = object["User"] as? [String: Any],
+              let user = users[String(userId)] as? [String: Any],
+              let login = user["LoginName"] as? String else { return nil }
+        let normalized = login.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !normalized.isEmpty, normalized != "tagged-devices", !normalized.contains(" ") else { return nil }
+        return normalized
+    }
+
     static func serveState(fromStatusJSON data: Data, port: UInt16) -> ServeState {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return ServeState() }
         var state = ServeState()
@@ -88,6 +100,7 @@ enum Tailscale {
     struct Probe: Sendable, Equatable {
         var cliFound = false
         var dnsName: String?
+        var login: String?
         var serve = ServeState()
         var funnelUnknown = false
     }
@@ -95,7 +108,10 @@ enum Tailscale {
     static func probe(port: UInt16) -> Probe {
         guard let cli = findCLI() else { return Probe() }
         var probe = Probe(cliFound: true)
-        probe.dnsName = run(cli, ["status", "--json"]).flatMap(dnsName(fromStatusJSON:))
+        if let status = run(cli, ["status", "--json"]) {
+            probe.dnsName = dnsName(fromStatusJSON: status)
+            probe.login = ownLogin(fromStatusJSON: status)
+        }
         if let data = run(cli, ["funnel", "status", "--json"]) {
             probe.serve = serveState(fromStatusJSON: data, port: port)
         } else {
