@@ -103,7 +103,7 @@ enum KnowledgeBase {
         guard url.pathExtension == "md", url.deletingLastPathComponent().resolvingSymlinksInPath().path == folder.path else {
             throw Failure.notAHandoffNote
         }
-        try FileManager.default.removeItem(at: url)
+        try FileManager.default.trashItem(at: url, resultingItemURL: nil)
     }
 
     private static func markdownFiles(in folder: URL) -> [URL] {

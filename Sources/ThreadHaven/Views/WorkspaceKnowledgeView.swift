@@ -126,7 +126,7 @@ struct WorkspaceKnowledgeView: View {
                         Task { await delete(item) }
                     }
                 } message: {
-                    Text("“\(item.name)” will be deleted. This cannot be undone.")
+                    Text("“\(item.name)” will be moved to the Trash.")
                 }
             }
         }

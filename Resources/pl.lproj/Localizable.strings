@@ -95,7 +95,7 @@
 "Cold cache rebuilds" = "Odbudowy zimnego cache";
 "Heaviest tool results" = "Najcięższe wyniki narzędzi";
 "Workspace" = "Przestrzeń robocza";
-"What every chat in a project starts with (⇧⌘W)" = "Z czym startuje każdy czat w projekcie (⇧⌘W)";
+"What every chat in a project starts with (⇧⌘I)" = "Z czym startuje każdy czat w projekcie (⇧⌘I)";
 "Project" = "Projekt";
 "All projects" = "Wszystkie projekty";
 "User scope only" = "Tylko zakres użytkownika";
@@ -138,7 +138,7 @@
 "Delete Note…" = "Usuń notatkę…";
 "Delete Note" = "Usuń notatkę";
 "Delete this handoff note?" = "Usunąć tę notatkę przekazania?";
-"“%@” will be deleted. This cannot be undone." = "Plik „%@” zostanie usunięty. Tej operacji nie można cofnąć.";
+"“%@” will be moved to the Trash." = "Plik „%@” zostanie przeniesiony do Kosza.";
 "Could not delete the note" = "Nie udało się usunąć notatki";
 "Only handoff notes can be deleted." = "Można usuwać tylko notatki przekazania.";
 "OK" = "OK";
