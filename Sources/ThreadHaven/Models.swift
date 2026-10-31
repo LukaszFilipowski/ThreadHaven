@@ -38,6 +38,8 @@ struct TranscriptMeta: Sendable {
     var model: String?
     var contextTokens: Int = 0
     var contextWindow: Int = 200_000
+    var lastReplyAt: Date?
+    var cacheTTL: TimeInterval = 300
     var entrypoint: String?
     var modified: Date
     var size: UInt64
@@ -117,6 +119,16 @@ struct Session: Identifiable, Sendable {
     var contextFraction: Double {
         guard let meta, meta.contextWindow > 0 else { return 0 }
         return min(1, Double(meta.contextTokens) / Double(meta.contextWindow))
+    }
+
+    var cacheExpiresAt: Date? {
+        guard let meta, let last = meta.lastReplyAt else { return nil }
+        return last.addingTimeInterval(meta.cacheTTL)
+    }
+
+    func isCacheCold(at date: Date = .now) -> Bool {
+        guard let expires = cacheExpiresAt else { return false }
+        return date > expires
     }
 
     var terminalBundle: String? {

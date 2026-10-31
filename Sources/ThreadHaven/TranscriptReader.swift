@@ -41,6 +41,7 @@ enum TranscriptReader {
         var customTitle: String?
         var aiTitle: String?
         var foundUsage = false
+        var foundTTL = false
 
         let tail = readChunk(url: url, fromEnd: true, bytes: 1_000_000)
         for line in lines(tail).reversed() {
@@ -52,9 +53,21 @@ enum TranscriptReader {
                 let created = usage["cache_creation_input_tokens"] as? Int ?? 0
                 meta.contextTokens = input + read + created
                 meta.model = (obj["requestedModel"] as? String) ?? (msg["model"] as? String)
+                meta.lastReplyAt = (obj["timestamp"] as? String).flatMap(parseDate)
                 foundUsage = true
                 if meta.cwd == nil { meta.cwd = obj["cwd"] as? String }
                 if meta.entrypoint == nil { meta.entrypoint = obj["entrypoint"] as? String }
+            }
+            if !foundTTL, contains(line, #""ephemeral_"#), let obj = json(line),
+               let usage = (obj["message"] as? [String: Any])?["usage"] as? [String: Any],
+               let creation = usage["cache_creation"] as? [String: Any] {
+                if (creation["ephemeral_1h_input_tokens"] as? Int ?? 0) > 0 {
+                    meta.cacheTTL = 3600
+                    foundTTL = true
+                } else if (creation["ephemeral_5m_input_tokens"] as? Int ?? 0) > 0 {
+                    meta.cacheTTL = 300
+                    foundTTL = true
+                }
             }
             if customTitle == nil, contains(line, #""custom-title""#), let obj = json(line) {
                 customTitle = obj["customTitle"] as? String ?? obj["title"] as? String
@@ -69,7 +82,7 @@ enum TranscriptReader {
                 if meta.cwd == nil { meta.cwd = obj["cwd"] as? String }
                 if meta.entrypoint == nil { meta.entrypoint = obj["entrypoint"] as? String }
             }
-            if foundUsage, aiTitle != nil, meta.cwd != nil, meta.entrypoint != nil { break }
+            if foundUsage, foundTTL, aiTitle != nil, meta.cwd != nil, meta.entrypoint != nil { break }
         }
 
         if aiTitle == nil || meta.cwd == nil || meta.firstPrompt == nil {
@@ -96,19 +109,21 @@ enum TranscriptReader {
         return meta
     }
 
+    static func parseDate(_ string: String) -> Date? {
+        try? Date(string, strategy: .iso8601.year().month().day().time(includingFractionalSeconds: true))
+    }
+
     static func recentMessages(path: String, limit: Int = 60) -> [ChatMessage] {
         let url = URL(fileURLWithPath: path)
         let chunk = readChunk(url: url, fromEnd: true, bytes: 3_000_000)
         var out: [ChatMessage] = []
-        let iso = ISO8601DateFormatter()
-        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         for line in lines(chunk) {
             let isUser = contains(line, #""type":"user""#)
             let isAssistant = contains(line, #""type":"assistant""#)
             guard isUser || isAssistant, let obj = json(line) else { continue }
             if obj["isSidechain"] as? Bool == true || obj["isMeta"] as? Bool == true { continue }
             let id = obj["uuid"] as? String ?? UUID().uuidString
-            let date = (obj["timestamp"] as? String).flatMap { iso.date(from: $0) }
+            let date = (obj["timestamp"] as? String).flatMap(parseDate)
             if isUser {
                 guard let text = userText(obj), !text.hasPrefix("<") else { continue }
                 out.append(ChatMessage(id: id, role: .user, text: String(text.prefix(4000)), date: date))
