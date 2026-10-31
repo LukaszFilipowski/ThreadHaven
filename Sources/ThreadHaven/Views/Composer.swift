@@ -75,16 +75,16 @@ struct Composer: View {
     }
 
     private var placeholder: String {
-        if canSend { return String(localized: "Type or dictate what Claude should do next…") }
-        return session.agent == .claude
-            ? String(localized: "Draft a prompt. Resume the chat to send it.")
-            : String(localized: "Draft a prompt. Sending works only for Claude Code chats.")
+        if canSend {
+            return session.agent == .claude
+                ? String(localized: "Type or dictate what Claude should do next…")
+                : String(localized: "Type or dictate what Codex should do next…")
+        }
+        return String(localized: "Draft a prompt. Resume the chat to send it.")
     }
 
     private var unavailableHelp: String {
-        session.agent == .claude
-            ? String(localized: "Sending works for running chats in Terminal or iTerm2")
-            : String(localized: "Sending works only for Claude Code chats")
+        String(localized: "Sending works for running chats in Terminal or iTerm2")
     }
 
     private func toggleDictation() {

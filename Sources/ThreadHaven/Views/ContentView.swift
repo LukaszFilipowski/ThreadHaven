@@ -148,7 +148,7 @@ struct SessionActions: View {
         if session.isLive {
             Button(String(localized: "Go to Terminal")) { store.focus(session.id) }
             Button(String(localized: "Compact Now")) { store.compact(session.id) }
-                .disabled(!TerminalBridge.canSend(to: session))
+                .disabled(!TerminalBridge.canCompact(session))
         } else {
             Button(String(localized: "Resume in Terminal")) { store.resume(session.id) }
         }

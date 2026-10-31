@@ -41,6 +41,8 @@ enum Agent: String, Sendable {
 
     var command: String { rawValue }
 
+    var canCompact: Bool { self == .claude }
+
     func resumeArguments(_ sessionId: String) -> [String] {
         switch self {
         case .claude: ["--resume", sessionId]
@@ -69,6 +71,7 @@ struct TranscriptMeta: Sendable {
 }
 
 struct LiveInfo: Sendable {
+    var agent: Agent?
     var status: SessionStatus = .idle
     var message: String?
     var tty: String?
@@ -105,7 +108,7 @@ struct Session: Identifiable, Sendable {
     var live: LiveInfo?
     var processAlive = false
 
-    var agent: Agent { meta?.agent ?? .claude }
+    var agent: Agent { meta?.agent ?? live?.agent ?? .claude }
 
     var cwd: String { meta?.cwd ?? live?.cwd ?? "" }
 
