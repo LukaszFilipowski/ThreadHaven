@@ -14,7 +14,7 @@ else
 CODESIGN_FLAGS := --force --timestamp --options runtime --entitlements Resources/$(APP_NAME).entitlements --sign "$(SIGN_IDENTITY)"
 endif
 
-.PHONY: all build test app zip notarize install run clean
+.PHONY: all build test stats app zip notarize install run clean
 
 all: app
 
@@ -27,6 +27,9 @@ build:
 
 test:
 	swift test
+
+stats:
+	swift run -c release threadhaven-stats
 
 app: build
 	rm -rf "$(APP)"

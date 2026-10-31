@@ -8,14 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- Hand Off button that continues a chat in a fresh session from a handoff note
+- Hand Off: a cheap model writes a note from a long chat and a fresh session continues from it
 - A warning before continuing a large chat whose prompt cache has expired
-- Handoff notes that let a long chat continue in a fresh session, written by a cheap model from a compact transcript digest
+- `threadhaven-stats` (`make stats`): a local report of context usage, cold cache rebuilds and simulated compaction savings
+- `ThreadHavenCore`, a Foundation-only library with the token analytics
 - Per-session token analytics: context growth, cache usage, cold cache rebuilds and heaviest tool results
 
 ### Changed
 
 - Auto-compact uses an absolute token threshold (150k by default) instead of a share of the context window
+
+### Security
+
+- Summaries and prompt polishing run the claude CLI without tools, MCP servers or skills, and leave no session behind
 
 ### Fixed
 
