@@ -59,17 +59,21 @@ enum HookInstaller {
     static func writeScript() throws {
         let fm = FileManager.default
         try secureDirectory(supportDir)
-        let current = try? String(contentsOf: hookURL, encoding: .utf8)
-        if current != script {
-            try script.write(to: hookURL, atomically: true, encoding: .utf8)
-        }
-        try fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: hookURL.path)
+        try writeExecutable(script, to: hookURL)
+        try writeExecutable(CodexNotifyInstaller.script, to: CodexNotifyInstaller.scriptURL)
         if !fm.fileExists(atPath: eventsURL.path) {
             fm.createFile(atPath: eventsURL.path, contents: nil, attributes: [.posixPermissions: 0o600])
         }
         for file in [eventsURL, eventsURL.appendingPathExtension("1")] where fm.fileExists(atPath: file.path) {
             try fm.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
         }
+    }
+
+    private static func writeExecutable(_ content: String, to url: URL) throws {
+        if (try? String(contentsOf: url, encoding: .utf8)) != content {
+            try content.write(to: url, atomically: true, encoding: .utf8)
+        }
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: url.path)
     }
 
     static func secureDirectory(_ url: URL) throws {
