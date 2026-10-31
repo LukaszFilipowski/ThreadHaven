@@ -7,6 +7,7 @@ enum Preferences {
     static let notify = "notify"
     static let autoCompact = "autoCompact"
     static let compactThreshold = "compactThreshold"
+    static let polishModel = "polishModel"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
@@ -16,6 +17,7 @@ enum Preferences {
             notify: true,
             autoCompact: false,
             compactThreshold: 70.0,
+            polishModel: "haiku",
         ])
     }
 
