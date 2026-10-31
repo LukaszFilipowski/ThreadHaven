@@ -75,6 +75,19 @@ struct HTTPServerTests {
         #expect(garbage.hasPrefix("HTTP/1.1 400 Bad Request\r\n"))
     }
 
+    @Test func closesEventStreamsAfterTheirLifetime() async throws {
+        let (server, port) = try await startServer { _, connection in
+            DispatchQueue.global().async {
+                _ = connection.beginEventStream(initial: Data("event: sessions\ndata: {}\n\n".utf8), lifetime: 0.3) {}
+            }
+        }
+        defer { server.stop() }
+        let started = Date()
+        let reply = try await exchange(port: port, "GET /api/events HTTP/1.1\r\nHost: a\r\n\r\n")
+        #expect(reply.contains("event: sessions"))
+        #expect(Date().timeIntervalSince(started) < 5)
+    }
+
     @Test func streamsServerSentEvents() async throws {
         let (server, port) = try await startServer { _, connection in
             DispatchQueue.global().async {

@@ -7,6 +7,7 @@ final class HTTPServer: @unchecked Sendable {
     static let requestTimeout: TimeInterval = 10
     static let idleTimeout: TimeInterval = 30
     static let maxRequestsPerConnection = 200
+    static let eventStreamLifetime: TimeInterval = 900
 
     let queue = DispatchQueue(label: "app.threadhaven.remote-server")
     var onRequest: ((HTTPRequest, HTTPConnection) -> Void)?
@@ -146,7 +147,7 @@ final class HTTPConnection: @unchecked Sendable {
         }
     }
 
-    func beginEventStream(initial: Data, onClose: @escaping @Sendable () -> Void) -> Bool {
+    func beginEventStream(initial: Data, lifetime: TimeInterval = HTTPServer.eventStreamLifetime, onClose: @escaping @Sendable () -> Void) -> Bool {
         dispatchPrecondition(condition: .notOnQueue(queue))
         return queue.sync {
             guard !closed, busy, !isEventStream,
@@ -154,7 +155,11 @@ final class HTTPConnection: @unchecked Sendable {
             isEventStream = true
             self.onClose = onClose
             timer?.cancel()
-            timer = nil
+            let limit = DispatchSource.makeTimerSource(queue: queue)
+            limit.schedule(deadline: .now() + lifetime)
+            limit.setEventHandler { [weak self] in self?.closeLocked() }
+            limit.resume()
+            timer = limit
             var data = HTTPResponse.eventStreamHead()
             data.append(initial)
             write(data)
