@@ -21,6 +21,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Security
 
 - Summaries and prompt polishing run the claude CLI without tools, MCP servers or skills, and leave no session behind
+- The hook no longer stores prompt text, and ThreadHaven files are readable only by your user account
+- Terminal and app identifiers from the environment are sanitized before they are used
+- Text is never sent to a terminal whose Claude Code process is stopped or in the background
+- A chat started from a handoff note reviews it and waits for confirmation instead of acting on it
+- Links in transcripts open only for http and https
+- Workflows use pinned actions, read-only CI permissions and step-scoped secrets
 
 ### Fixed
 

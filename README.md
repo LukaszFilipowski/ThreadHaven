@@ -74,6 +74,8 @@ Switching tabs and sending prompts use AppleScript, so macOS will ask once for p
 
 Everything stays on your Mac. ThreadHaven has no server, no analytics and no network access of its own. Dictation uses Apple's on-device speech recognition when available. Prompt polishing runs your local `claude` CLI, so that text goes to Anthropic the same way your other Claude Code prompts do.
 
+See [SECURITY.md](SECURITY.md) for details and how to report a vulnerability.
+
 ## Permissions
 
 | Permission | Why |
