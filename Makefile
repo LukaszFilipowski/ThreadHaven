@@ -1,7 +1,7 @@
 APP_NAME := ThreadHaven
 VERSION := $(shell cat VERSION)
 BUILD_NUMBER := $(shell git rev-list --count HEAD 2>/dev/null || echo 1)
-SWIFT_BUILD := swift build -c release --arch arm64 --arch x86_64
+ARCHS := arm64 x86_64
 APP := build/$(APP_NAME).app
 ZIP := build/$(APP_NAME)-$(VERSION).zip
 INSTALL_DIR ?= $(HOME)/Applications
@@ -19,7 +19,11 @@ endif
 all: app
 
 build:
-	$(SWIFT_BUILD)
+	mkdir -p build
+	for arch in $(ARCHS); do \
+		swift build -c release --arch $$arch && \
+		cp "$$(swift build -c release --arch $$arch --show-bin-path)/$(APP_NAME)" "build/$(APP_NAME)-$$arch" || exit 1; \
+	done
 
 test:
 	swift test
@@ -27,7 +31,7 @@ test:
 app: build
 	rm -rf "$(APP)"
 	mkdir -p "$(APP)/Contents/MacOS" "$(APP)/Contents/Resources"
-	cp "$$($(SWIFT_BUILD) --show-bin-path)/$(APP_NAME)" "$(APP)/Contents/MacOS/"
+	lipo -create -output "$(APP)/Contents/MacOS/$(APP_NAME)" $(foreach arch,$(ARCHS),"build/$(APP_NAME)-$(arch)")
 	cp Resources/Info.plist "$(APP)/Contents/"
 	cp Resources/AppIcon.icns "$(APP)/Contents/Resources/"
 	cp -R Resources/*.lproj "$(APP)/Contents/Resources/"
