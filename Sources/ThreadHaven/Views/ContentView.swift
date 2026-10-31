@@ -153,7 +153,7 @@ struct SessionActions: View {
             Button(String(localized: "Resume in Terminal")) { store.resume(session.id) }
         }
         Button(String(localized: "Hand Off to a Fresh Chat")) { store.handOff(session.id) }
-            .disabled(session.cwd.isEmpty)
+            .disabled(session.cwd.isEmpty || session.agent != .claude)
         Button(String(localized: "New Chat Here (continue)")) {
             store.newChat(in: session.cwd, continueLast: true, prompt: "")
         }

@@ -29,12 +29,15 @@ struct SessionDetail: View {
                         .font(.title2.weight(.semibold))
                         .lineLimit(2)
                         .textSelection(.enabled)
-                    Text(session.cwd)
-                        .font(.callout.monospaced())
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .textSelection(.enabled)
+                    HStack(spacing: 6) {
+                        AgentBadge(agent: session.agent)
+                        Text(session.cwd)
+                            .font(.callout.monospaced())
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .textSelection(.enabled)
+                    }
                 }
                 Spacer()
                 StatusPill(session: session)
@@ -69,7 +72,7 @@ struct SessionDetail: View {
                 Spacer()
                 actions
             }
-            if let path = session.meta?.path {
+            if session.agent == .claude, let path = session.meta?.path {
                 TokenInsightsView(path: path, modified: session.meta?.modified)
             }
         }
@@ -141,8 +144,9 @@ struct SessionDetail: View {
             loading = false
             return
         }
+        let agent = session.agent
         let result = await Task.detached(priority: .userInitiated) {
-            TranscriptReader.recentMessages(path: path)
+            agent == .codex ? CodexReader.recentMessages(path: path) : TranscriptReader.recentMessages(path: path)
         }.value
         messages = result
         loading = false
@@ -164,7 +168,7 @@ struct HandoffButton: View {
                 Label(String(localized: "Hand Off"), systemImage: "arrow.uturn.right.circle")
             }
         }
-        .disabled(running || session.cwd.isEmpty)
+        .disabled(running || session.cwd.isEmpty || session.agent != .claude)
         .help(String(localized: "Writes a handoff note with a cheap model and continues in a fresh chat"))
     }
 }

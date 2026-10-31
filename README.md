@@ -29,6 +29,7 @@ Measure your own usage with `make stats`. The report is computed locally from `~
 - **New chat in a folder.** <kbd>⌘N</kbd> starts `claude --continue` in any recent folder, so you pick up the previous thread right away.
 - **Context awareness.** Every chat shows how full its context window is. Send `/compact` with one click, or let ThreadHaven do it automatically above a threshold you choose.
 - **Project knowledge.** CLAUDE.md, memory and handoff notes of a project side by side in the Workspace window, with a preview and a fresh chat from any note.
+- **Codex CLI sessions.** Recent OpenAI Codex CLI sessions from `~/.codex/sessions` show up next to your Claude Code chats with a small badge, read-only. Resume one with `codex resume` in a click.
 - **Dictation.** Dictate prompts with on-device speech recognition, then turn a rough note into a clean prompt with one click (uses your own `claude` CLI).
 - **Native and small.** SwiftUI, a universal binary under 3 MB, light and dark mode, English and Polish.
 
@@ -60,12 +61,13 @@ On first launch, click **Install hook** in the sidebar. ThreadHaven adds a small
 
 ## How it works
 
-ThreadHaven combines two read-only sources:
+ThreadHaven combines these read-only sources:
 
 | Source | Location | Used for |
 | --- | --- | --- |
 | Transcripts | `~/.claude/projects/**/*.jsonl` | Titles, folders, messages, context usage |
 | Hook events | `~/.threadhaven/events.jsonl` | Live status, notifications, terminal tab |
+| Codex CLI sessions | `~/.codex/sessions/**/rollout-*.jsonl` | Titles, folders, messages, context usage |
 
 The hook is a tiny POSIX shell script (`~/.threadhaven/hook.sh`) registered for `SessionStart`, `UserPromptSubmit`, `PostToolUse`, `Notification`, `Stop` and `SessionEnd`. It appends one JSON line per event together with the terminal and TTY of the session, and rotates the file at 5 MB.
 

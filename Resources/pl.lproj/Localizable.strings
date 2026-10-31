@@ -143,3 +143,6 @@
 "Only handoff notes can be deleted." = "Można usuwać tylko notatki przekazania.";
 "OK" = "OK";
 "Handoff notes" = "Notatki przekazania";
+"%@ session" = "Sesja %@";
+"Draft a prompt. Sending works only for Claude Code chats." = "Przygotuj prompt. Wysyłanie działa tylko dla czatów Claude Code.";
+"Sending works only for Claude Code chats" = "Wysyłanie działa tylko dla czatów Claude Code";
