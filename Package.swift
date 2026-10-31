@@ -7,6 +7,7 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [
         .executable(name: "ThreadHaven", targets: ["ThreadHaven"]),
+        .executable(name: "threadhaven-stats", targets: ["threadhaven-stats"]),
         .library(name: "ThreadHavenCore", targets: ["ThreadHavenCore"]),
     ],
     targets: [
@@ -16,6 +17,11 @@ let package = Package(
         ),
         .executableTarget(
             name: "ThreadHaven",
+            dependencies: ["ThreadHavenCore"],
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
+        .executableTarget(
+            name: "threadhaven-stats",
             dependencies: ["ThreadHavenCore"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
