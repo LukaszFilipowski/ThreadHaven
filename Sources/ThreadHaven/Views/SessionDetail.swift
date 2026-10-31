@@ -69,6 +69,9 @@ struct SessionDetail: View {
                 Spacer()
                 actions
             }
+            if let path = session.meta?.path {
+                TokenInsightsView(path: path, modified: session.meta?.modified)
+            }
         }
         .padding(16)
     }
