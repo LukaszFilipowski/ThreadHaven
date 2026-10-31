@@ -2,12 +2,15 @@ APP_NAME := ThreadHaven
 APP := build/$(APP_NAME).app
 INSTALL_DIR ?= $(HOME)/Applications
 
-.PHONY: all build app install run clean
+.PHONY: all build test app install run clean
 
 all: app
 
 build:
 	swift build -c release
+
+test:
+	swift test
 
 app: build
 	rm -rf "$(APP)"
