@@ -100,7 +100,7 @@ final class SessionStore {
     func newChat(in directory: String, continueLast: Bool, prompt: String) {
         var arguments = continueLast ? ["--continue"] : []
         let prompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !prompt.isEmpty { arguments.append(prompt) }
+        if !prompt.isEmpty { arguments += ["--", prompt] }
         TerminalBridge.openNew(cwd: directory, arguments: arguments, terminal: Preferences.terminal)
     }
 
@@ -202,6 +202,17 @@ final class SessionStore {
         }
     }
 
+    private static let approvalNotifications: Set<String?> = ["permission_prompt", "elicitation_dialog", nil]
+
+    private func endOtherSessions(on tty: String?, except id: String) {
+        guard let tty, tty != "??" else { return }
+        for (otherId, var other) in live where otherId != id && other.tty == tty && !other.ended {
+            other.ended = true
+            live[otherId] = other
+            Notifier.shared.clear(otherId)
+        }
+    }
+
     private func apply(_ line: HookLine, notify: Bool) {
         let event = line.event
         let id = event.sessionId
@@ -213,14 +224,16 @@ final class SessionStore {
         case "SessionStart":
             info.ended = false
             if info.status != .working { info.status = .idle }
+            endOtherSessions(on: info.tty, except: id)
         case "UserPromptSubmit":
             info.ended = false
             info.markWorking()
+            endOtherSessions(on: info.tty, except: id)
         case "PostToolUse":
             if info.status == .needsInput { info.markWorking() }
         case "Notification" where event.notificationType == "idle_prompt":
             if info.status == .working { info.status = .finished }
-        case "Notification":
+        case "Notification" where Self.approvalNotifications.contains(event.notificationType):
             info.status = .needsInput
             info.message = event.message
             info.seen = false

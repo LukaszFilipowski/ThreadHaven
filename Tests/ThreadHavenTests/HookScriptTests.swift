@@ -50,6 +50,20 @@ struct HookScriptTests {
         #expect(event["session_id"] as? String == "s2")
     }
 
+    @Test func concurrentEventsStayOnSeparateLines() async throws {
+        let home = try tempHome()
+        let message = String(repeating: "y", count: 200_000)
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            for i in 0..<12 {
+                group.addTask {
+                    try run(#"{"session_id":"s\#(i)","hook_event_name":"Stop","last_assistant_message":"\#(message)"}"#, home: home)
+                }
+            }
+            try await group.waitForAll()
+        }
+        #expect(try events(in: home).count == 12)
+    }
+
     @Test func ignoresEmptyInput() throws {
         let home = try tempHome()
         try run("", home: home)

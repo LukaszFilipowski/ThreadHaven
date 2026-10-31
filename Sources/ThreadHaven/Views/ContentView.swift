@@ -84,6 +84,13 @@ struct ContentView: View {
         .onChange(of: selection) { _, id in
             if let id { store.markSeen(id) }
         }
+        .onChange(of: selectionNeedsAttention) { _, attention in
+            if attention, NSApp.isActive, let id = selection { store.markSeen(id) }
+        }
+    }
+
+    private var selectionNeedsAttention: Bool {
+        selection.flatMap { store.session($0)?.needsAttention } ?? false
     }
 
     private func shortcutButtons(_ live: [Session]) -> some View {

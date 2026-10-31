@@ -77,3 +77,4 @@
 "When a running chat finishes a turn above the threshold, ThreadHaven sends /compact to it. Only for chats in Terminal or iTerm2." = "Gdy działający czat skończy turę powyżej progu, ThreadHaven wyśle do niego /compact. Tylko dla czatów w Terminalu lub iTerm2.";
 "Working…" = "Pracuje…";
 "Your turn" = "Twoja kolej";
+"Unexpected format of %@ in ~/.claude/settings.json. Nothing was changed." = "Nieoczekiwany format %@ w ~/.claude/settings.json. Nic nie zostało zmienione.";
