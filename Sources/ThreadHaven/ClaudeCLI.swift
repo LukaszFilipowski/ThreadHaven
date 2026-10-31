@@ -26,12 +26,22 @@ enum ClaudeCLI {
         }.value
     }
 
-    private static func execute(_ arguments: [String], input: String) throws -> String {
+    static func command(_ arguments: [String], in directory: URL) async throws -> String {
+        try await Task.detached(priority: .userInitiated) {
+            try execute(arguments, input: "", directory: directory)
+        }.value
+    }
+
+    private static func execute(
+        _ arguments: [String],
+        input: String,
+        directory: URL = FileManager.default.temporaryDirectory
+    ) throws -> String {
         guard let claude = resolvePath() else { throw Failure.notFound }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: claude)
         process.arguments = arguments
-        process.currentDirectoryURL = FileManager.default.temporaryDirectory
+        process.currentDirectoryURL = directory
         let stdin = Pipe()
         let output = Pipe()
         let errors = Pipe()

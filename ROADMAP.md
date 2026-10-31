@@ -14,16 +14,16 @@ Long chats are where most tokens go. Each turn re-reads the whole context, and c
 
 ## 0.3 · Workspace
 
-A first measurement shows that files on disk (CLAUDE.md, memory, skill descriptions) are only a small part of the context a session starts with. Most of it is the system prompt, built-in tool definitions and the tools of connected MCP servers, so the biggest wins come from turning off servers and connectors a project does not need.
+A first measurement shows that files on disk (CLAUDE.md, memory, skill descriptions) are only a small part of the context a session starts with. Most of it is the system prompt and built-in tools. Claude Code already defers MCP tool definitions by default, so switching off servers, connectors and plugins a project does not need mainly saves their names, instructions and skill descriptions.
 
-- A breakdown of the context every session starts with, measured from the first reply and split into what is on disk and what comes from tools and MCP servers
-- Turning skills, MCP servers and plugins on and off per project
+- ~~A breakdown of the context every session starts with~~ (done)
+- ~~Turning MCP servers and plugins on and off per project~~ (done)
 - ~~A knowledge base per project that keeps CLAUDE.md, memory and handoff notes together~~ (done)
 
 ## 0.4 · Teams
 
-- Shared skills and knowledge bases distributed through a Git repository
-- Team profiles that set up hooks, skills and settings in one step
+- Team skills through Claude Code plugin marketplaces: show what a project enables and add a team marketplace in a click, instead of a separate sharing system
+- Team profiles that set up the ThreadHaven hook, plugins and settings in one step
 - Opt-in team usage insights that stay on your own infrastructure
 
 ## Platforms
