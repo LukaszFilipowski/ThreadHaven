@@ -5,7 +5,7 @@ Thanks for helping out. A few simple rules keep the project easy to work on.
 ## Principles
 
 - **Keep it simple.** Small types, plain functions, no dependencies unless they clearly pay off.
-- **Read-only by default.** Never modify Claude Code transcripts. The only file ThreadHaven writes outside its own folder is `~/.claude/settings.json`, and only when the user installs or removes the hook.
+- **Read-only by default.** Never modify Claude Code transcripts or `~/.claude.json`. Outside its own folder ThreadHaven writes only when the user asks for it, and only through documented mechanisms. SECURITY.md lists every such write; keep that list up to date.
 - **Native first.** SwiftUI and system frameworks.
 - **Self-explanatory code.** Clear names instead of comments.
 
