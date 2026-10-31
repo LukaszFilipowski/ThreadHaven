@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Remote access (preview): a web app served on 127.0.0.1 and published in your tailnet with `tailscale serve`, with per-device tokens in the Keychain, QR pairing, chat status over server-sent events, recent messages, sending prompts to foreground chats and Web Push notifications
 - Team tab in the Workspace window that shows a project's plugin marketplaces and enabled plugins, and adds a team marketplace with project scope through the claude CLI
 - Turn MCP servers and plugins on or off per project from the Workspace window, using Claude Code's documented local settings
 - Quick switcher: press ⌃⌥Space anywhere to search chats and jump to one

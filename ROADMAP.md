@@ -30,7 +30,7 @@ A first measurement shows that files on disk (CLAUDE.md, memory, skill descripti
 
 - **Core library.** The transcript reader, hook handling and token insights move into a Foundation-only `ThreadHavenCore` package that builds on macOS and Linux.
 - **Linux.** A native desktop app built on the core library.
-- **Phone companion over Tailscale.** A web app served by ThreadHaven inside your tailnet: chat status, notifications and sending prompts from iPhone or Android, from any network. See [the design](docs/design/remote-access.md).
+- **Phone companion over Tailscale** (in preview). A web app served by ThreadHaven inside your tailnet: chat status, notifications and sending prompts from iPhone or Android, from any network. See [the design](docs/design/remote-access.md).
 - **Self-hostable relay.** An open-source, end-to-end encrypted relay for teams without Tailscale.
 - **Native iPhone and Android apps** on the same API, with richer notifications and approvals.
 

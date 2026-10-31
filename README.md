@@ -32,6 +32,7 @@ Measure your own usage with `make stats`. The report is computed locally from `~
 - **Team marketplaces.** See which plugin marketplaces and plugins a project shares with your team, and add a team marketplace to its `.claude/settings.json` in a click.
 - **Codex CLI sessions.** Recent OpenAI Codex CLI sessions from `~/.codex/sessions` show up next to your Claude Code chats with a small badge, read-only. Resume one with `codex resume` in a click.
 - **Dictation.** Dictate prompts with on-device speech recognition, then turn a rough note into a clean prompt with one click (uses your own `claude` CLI).
+- **Remote access (preview).** Check chats, get notifications and send prompts from your phone over Tailscale. See [Remote access](#remote-access).
 - **Native and small.** SwiftUI, a universal binary under 3 MB, light and dark mode, English and Polish.
 
 ## Requirements
@@ -74,9 +75,20 @@ The hook is a tiny POSIX shell script (`~/.threadhaven/hook.sh`) registered for 
 
 Switching tabs and sending prompts use AppleScript, so macOS will ask once for permission to control your terminal.
 
+## Remote access
+
+Remote access is a preview of a phone companion that works from any network through [Tailscale](https://tailscale.com). ThreadHaven serves a small web app on your Mac and you publish it inside your tailnet with `tailscale serve`. Nothing is exposed to the public internet.
+
+1. Install Tailscale on your Mac and your phone and sign in to the same tailnet.
+2. Turn on **Settings → Remote access**. ThreadHaven starts a server on `127.0.0.1` and shows a `tailscale serve --bg --https=443 http://127.0.0.1:<port>` command. Run it once in a terminal.
+3. Scan the QR code with your phone. It opens the web app and pairs that phone with its own key.
+4. Add the page to your home screen and tap **Turn on notifications** to get a push when a chat finishes or needs your approval (iOS 16.4 or later, or Android).
+
+From the phone you can see running and recent chats, read their recent messages and send a prompt to a chat that runs in Terminal or iTerm2. Every remote prompt also shows a notification on the Mac. Approving permission prompts and starting new chats stay on the Mac for now. Each paired device can be revoked in Settings, and turning remote access off, or leaving it idle for the period you choose, signs out every device. See [SECURITY.md](SECURITY.md#remote-access) for the protections and [the design](docs/design/remote-access.md) for what comes next.
+
 ## Privacy
 
-Everything stays on your Mac. ThreadHaven has no server, no analytics and no network access of its own. Dictation uses Apple's on-device speech recognition when available. Prompt polishing runs your local `claude` CLI, so that text goes to Anthropic the same way your other Claude Code prompts do.
+Everything stays on your Mac. ThreadHaven has no server in the cloud and no analytics. Its only network features are remote access, which is off by default, and the encrypted push notifications it sends to the phones you pair. Dictation uses Apple's on-device speech recognition when available. Prompt polishing runs your local `claude` CLI, so that text goes to Anthropic the same way your other Claude Code prompts do.
 
 See [SECURITY.md](SECURITY.md) for details and how to report a vulnerability.
 
