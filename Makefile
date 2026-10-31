@@ -38,6 +38,9 @@ app: build
 	cp Resources/Info.plist "$(APP)/Contents/"
 	cp Resources/AppIcon.icns "$(APP)/Contents/Resources/"
 	cp -R Resources/*.lproj "$(APP)/Contents/Resources/"
+	cp -R Resources/Web "$(APP)/Contents/Resources/"
+	sips -s format png -Z 192 Resources/AppIcon.icns --out "$(APP)/Contents/Resources/Web/icon-192.png" >/dev/null
+	sips -s format png -Z 512 Resources/AppIcon.icns --out "$(APP)/Contents/Resources/Web/icon-512.png" >/dev/null
 	plutil -replace CFBundleShortVersionString -string "$(VERSION)" "$(APP)/Contents/Info.plist"
 	plutil -replace CFBundleVersion -string "$(BUILD_NUMBER)" "$(APP)/Contents/Info.plist"
 	codesign $(CODESIGN_FLAGS) "$(APP)"
