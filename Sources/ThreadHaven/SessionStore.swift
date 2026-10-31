@@ -1,5 +1,6 @@
 import AppKit
 import Observation
+import ThreadHavenCore
 
 @MainActor
 @Observable

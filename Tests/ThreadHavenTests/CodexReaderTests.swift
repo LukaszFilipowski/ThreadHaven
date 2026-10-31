@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 @testable import ThreadHaven
+import ThreadHavenCore
 
 struct CodexReaderTests {
     let root = Bundle.module.url(forResource: "codex", withExtension: nil, subdirectory: "Fixtures")!

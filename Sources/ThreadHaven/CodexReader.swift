@@ -1,4 +1,5 @@
 import Foundation
+import ThreadHavenCore
 
 enum CodexReader {
     static let sessionsDir = FileManager.default.homeDirectoryForCurrentUser

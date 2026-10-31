@@ -1,4 +1,5 @@
 import Foundation
+import ThreadHavenCore
 
 enum TranscriptReader {
     static let projectsDir = FileManager.default.homeDirectoryForCurrentUser

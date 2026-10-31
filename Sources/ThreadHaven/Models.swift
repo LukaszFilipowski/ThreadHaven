@@ -1,4 +1,5 @@
 import Foundation
+import ThreadHavenCore
 
 enum SessionStatus: String, Sendable {
     case working
@@ -26,46 +27,6 @@ enum SessionStatus: String, Sendable {
         case .closed: "moon.zzz"
         }
     }
-}
-
-enum Agent: String, Sendable {
-    case claude
-    case codex
-
-    var name: String {
-        switch self {
-        case .claude: "Claude"
-        case .codex: "Codex"
-        }
-    }
-
-    var command: String { rawValue }
-
-    func resumeArguments(_ sessionId: String) -> [String] {
-        switch self {
-        case .claude: ["--resume", sessionId]
-        case .codex: ["resume", sessionId]
-        }
-    }
-}
-
-struct TranscriptMeta: Sendable {
-    var agent: Agent = .claude
-    var sessionId: String
-    var path: String
-    var cwd: String?
-    var title: String?
-    var firstPrompt: String?
-    var lastPrompt: String?
-    var model: String?
-    var contextTokens: Int = 0
-    var baselineContext: Int?
-    var contextWindow: Int = 200_000
-    var lastReplyAt: Date?
-    var cacheTTL: TimeInterval = 300
-    var entrypoint: String?
-    var modified: Date
-    var size: UInt64
 }
 
 struct LiveInfo: Sendable {
@@ -160,14 +121,6 @@ struct Session: Identifiable, Sendable {
         if let bundle = live?.bundle, TerminalBridge.knownBundles.contains(bundle) { return bundle }
         return TerminalBridge.bundle(forTermProgram: live?.term)
     }
-}
-
-struct ChatMessage: Identifiable, Sendable {
-    enum Role: Sendable { case user, assistant }
-    let id: String
-    let role: Role
-    let text: String
-    let date: Date?
 }
 
 struct HookLine: Decodable {
