@@ -38,6 +38,7 @@ public struct TranscriptMeta: Sendable {
     public var lastReplyAt: Date?
     public var cacheTTL: TimeInterval
     public var entrypoint: String?
+    public var gitBranch: String?
     public var modified: Date
     public var size: UInt64
 
@@ -56,6 +57,7 @@ public struct TranscriptMeta: Sendable {
         lastReplyAt: Date? = nil,
         cacheTTL: TimeInterval = 300,
         entrypoint: String? = nil,
+        gitBranch: String? = nil,
         modified: Date,
         size: UInt64
     ) {
@@ -73,13 +75,14 @@ public struct TranscriptMeta: Sendable {
         self.lastReplyAt = lastReplyAt
         self.cacheTTL = cacheTTL
         self.entrypoint = entrypoint
+        self.gitBranch = gitBranch
         self.modified = modified
         self.size = size
     }
 }
 
 public struct ChatMessage: Identifiable, Sendable {
-    public enum Role: Sendable { case user, assistant }
+    public enum Role: Sendable { case user, assistant, tool, output }
     public let id: String
     public let role: Role
     public let text: String
