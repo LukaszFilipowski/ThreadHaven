@@ -7,6 +7,7 @@ struct SettingsView: View {
     @AppStorage(Preferences.daysBack) private var daysBack = 14
     @AppStorage(Preferences.showBackground) private var showBackground = false
     @AppStorage(Preferences.quickSwitcher) private var quickSwitcher = true
+    @AppStorage(Preferences.openInApp) private var openInApp = true
     @AppStorage(Preferences.notify) private var notify = true
     @AppStorage(Preferences.autoCompact) private var autoCompact = false
     @AppStorage(Preferences.compactTokens) private var compactTokens = 150_000
@@ -18,7 +19,8 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section(String(localized: "General")) {
-                Picker(String(localized: "Terminal for new chats"), selection: $terminal) {
+                Toggle(String(localized: "Open chats in ThreadHaven's terminal"), isOn: $openInApp)
+                Picker(String(localized: "External terminal"), selection: $terminal) {
                     ForEach(TerminalApp.allCases) { Text($0.name).tag($0.rawValue) }
                 }
                 Stepper(value: $daysBack, in: 1...90) {

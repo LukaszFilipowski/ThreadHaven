@@ -8,6 +8,12 @@ struct SessionDetail: View {
     @State private var loading = true
     @State private var atBottom = true
     @State private var showInsights = false
+    @State private var pane = Pane.terminal
+
+    enum Pane: Hashable {
+        case terminal
+        case history
+    }
 
     static let coldCacheWarningTokens = 50_000
 
@@ -15,6 +21,22 @@ struct SessionDetail: View {
         VStack(spacing: 0) {
             header
             Divider()
+            if pane == .terminal {
+                TerminalPane(id: session.id, session: session)
+            } else {
+                history
+            }
+        }
+        .task(id: session.meta?.modified) {
+            await loadMessages()
+        }
+        .task(id: pane == .history ? session.meta?.path : nil) {
+            await followTranscript()
+        }
+    }
+
+    private var history: some View {
+        VStack(spacing: 0) {
             ZStack(alignment: .bottom) {
                 transcript
                 if !atBottom, !messages.isEmpty {
@@ -35,8 +57,18 @@ struct SessionDetail: View {
             Divider()
             Composer(session: session)
         }
-        .task(id: session.meta?.modified) {
-            await loadMessages()
+    }
+
+    private func followTranscript() async {
+        guard let path = session.meta?.path else { return }
+        var lastSize = (try? FileManager.default.attributesOfItem(atPath: path)[.size] as? NSNumber)?.int64Value ?? 0
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .milliseconds(1500))
+            let size = (try? FileManager.default.attributesOfItem(atPath: path)[.size] as? NSNumber)?.int64Value ?? 0
+            if size != lastSize {
+                lastSize = size
+                await loadMessages()
+            }
         }
     }
 
@@ -52,6 +84,13 @@ struct SessionDetail: View {
                     .lineLimit(2)
                     .textSelection(.enabled)
                 Spacer(minLength: 8)
+                Picker("", selection: $pane) {
+                    Label(String(localized: "Terminal"), systemImage: "terminal").tag(Pane.terminal)
+                    Label(String(localized: "History"), systemImage: "text.bubble").tag(Pane.history)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
                 StatusPill(session: session)
             }
             if let msg = session.live?.message, session.status == .needsInput {

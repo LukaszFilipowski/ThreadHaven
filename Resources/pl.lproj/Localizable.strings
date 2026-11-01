@@ -232,3 +232,17 @@
 "Commands run in the chat's terminal. ThreadHaven switches to it so you can see the result." = "Komendy działają w terminalu czatu. ThreadHaven przełączy na niego, żebyś zobaczył wynik.";
 "Resume the chat in a terminal with this message (⌘↩)" = "Wznów czat w terminalu z tą wiadomością (⌘↩)";
 "Opened in a new terminal window" = "Otwarto w nowym oknie terminala";
+"The session has ended." = "Sesja się zakończyła.";
+"Open Again" = "Otwórz ponownie";
+"Running in another terminal" = "Działa w innym terminalu";
+"This chat is open in %@. Quit it there to open it here, or jump to it." = "Ten czat jest otwarty w: %@. Zamknij go tam, żeby otworzyć tutaj, albo przejdź do niego.";
+"Open this chat" = "Otwórz ten czat";
+"Resume it right here in ThreadHaven's terminal. Everything works as in a normal terminal, including slash commands." = "Wznów go tutaj, w terminalu ThreadHaven. Wszystko działa jak w zwykłym terminalu, łącznie z komendami ze slashem.";
+"Open Here" = "Otwórz tutaj";
+"Open in %@" = "Otwórz w: %@";
+"History" = "Historia";
+"New chat" = "Nowy czat";
+"another terminal" = "innym terminalu";
+"Opens in ThreadHaven" = "Otworzy się w ThreadHaven";
+"Open chats in ThreadHaven's terminal" = "Otwieraj czaty w terminalu ThreadHaven";
+"External terminal" = "Zewnętrzny terminal";

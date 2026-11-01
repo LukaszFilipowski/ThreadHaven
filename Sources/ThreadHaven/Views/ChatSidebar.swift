@@ -5,6 +5,7 @@ struct ChatSidebar: View {
     @Environment(SessionStore.self) private var store
     @Binding var selection: String?
     let sessions: [Session]
+    var pending: [EmbeddedTerminals.Pending] = []
     @State private var toggled: Set<String> = []
 
     var body: some View {
@@ -15,8 +16,14 @@ struct ChatSidebar: View {
                     if !store.hooksInstalled {
                         HooksBanner().padding(.bottom, 8)
                     }
-                    if !layout.running.isEmpty {
+                    if !layout.running.isEmpty || !pending.isEmpty {
                         Section {
+                            ForEach(pending) { item in
+                                PendingRow(item: item, selected: selection == item.id)
+                                    .id(item.id)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture { selection = item.id }
+                            }
                             ForEach(Array(layout.running.enumerated()), id: \.element.id) { index, session in
                                 row(session, showProject: true, shortcut: index < 9 ? index + 1 : nil)
                             }
@@ -92,6 +99,30 @@ struct ChatSidebar: View {
         selection = ordered[next].id
         proxy.scrollTo(ordered[next].id)
         return .handled
+    }
+}
+
+struct PendingRow: View {
+    let item: EmbeddedTerminals.Pending
+    let selected: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ProgressView().controlSize(.small).frame(width: 16, height: 16)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(String(localized: "New chat"))
+                    .font(.callout.weight(.medium))
+                Label(item.project, systemImage: "folder")
+                    .font(.caption)
+                    .foregroundStyle(selected ? Color.white.opacity(0.85) : Color.secondary)
+            }
+            .foregroundStyle(selected ? Color.white : Color.primary)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 7)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(selected ? Color.accentColor : Color.clear, in: RoundedRectangle(cornerRadius: 8))
     }
 }
 

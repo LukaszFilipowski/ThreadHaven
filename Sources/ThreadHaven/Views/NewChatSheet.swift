@@ -47,7 +47,7 @@ struct NewChatSheet: View {
             }
 
             HStack {
-                Text("Opens in \(Preferences.terminal.name)")
+                Text(UserDefaults.standard.bool(forKey: Preferences.openInApp) ? String(localized: "Opens in ThreadHaven") : String(localized: "Opens in \(Preferences.terminal.name)"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
