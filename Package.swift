@@ -29,11 +29,12 @@ let package = Package(
 )
 
 #if os(macOS)
+package.dependencies.append(.package(url: "https://github.com/migueldeicaza/SwiftTerm.git", exact: "1.11.2"))
 package.products.insert(.executable(name: "ThreadHaven", targets: ["ThreadHaven"]), at: 0)
 package.targets += [
     .executableTarget(
         name: "ThreadHaven",
-        dependencies: ["ThreadHavenCore"],
+        dependencies: ["ThreadHavenCore", .product(name: "SwiftTerm", package: "SwiftTerm")],
         swiftSettings: [.swiftLanguageMode(.v5)]
     ),
     .testTarget(

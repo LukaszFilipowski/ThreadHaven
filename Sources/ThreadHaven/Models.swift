@@ -123,6 +123,11 @@ struct Session: Identifiable, Sendable {
         return date > expires
     }
 
+    var terminalName: String {
+        guard let bundle = terminalBundle else { return String(localized: "another terminal") }
+        return TerminalApp(rawValue: bundle)?.name ?? (live?.term ?? String(localized: "another terminal"))
+    }
+
     var terminalBundle: String? {
         if let bundle = live?.bundle, TerminalBridge.knownBundles.contains(bundle) { return bundle }
         return TerminalBridge.bundle(forTermProgram: live?.term)

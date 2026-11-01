@@ -8,6 +8,13 @@ struct SessionDetail: View {
     @State private var loading = true
     @State private var atBottom = true
     @State private var showInsights = false
+    @State private var pane = Pane.terminal
+    @State private var now = Date()
+
+    enum Pane: Hashable {
+        case terminal
+        case history
+    }
 
     static let coldCacheWarningTokens = 50_000
 
@@ -15,6 +22,28 @@ struct SessionDetail: View {
         VStack(spacing: 0) {
             header
             Divider()
+            if pane == .terminal {
+                TerminalPane(id: session.id, session: session)
+            } else {
+                history
+            }
+        }
+        .task(id: session.meta?.modified) {
+            await loadMessages()
+        }
+        .task(id: pane == .history ? session.meta?.path : nil) {
+            await followTranscript()
+        }
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                now = Date()
+            }
+        }
+    }
+
+    private var history: some View {
+        VStack(spacing: 0) {
             ZStack(alignment: .bottom) {
                 transcript
                 if !atBottom, !messages.isEmpty {
@@ -35,8 +64,18 @@ struct SessionDetail: View {
             Divider()
             Composer(session: session)
         }
-        .task(id: session.meta?.modified) {
-            await loadMessages()
+    }
+
+    private func followTranscript() async {
+        guard let path = session.meta?.path else { return }
+        var lastSize = (try? FileManager.default.attributesOfItem(atPath: path)[.size] as? NSNumber)?.int64Value ?? 0
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .milliseconds(1500))
+            let size = (try? FileManager.default.attributesOfItem(atPath: path)[.size] as? NSNumber)?.int64Value ?? 0
+            if size != lastSize {
+                lastSize = size
+                await loadMessages()
+            }
         }
     }
 
@@ -50,8 +89,16 @@ struct SessionDetail: View {
                 Text(session.title)
                     .font(.title3.weight(.semibold))
                     .lineLimit(2)
+                    .frame(minWidth: 80, alignment: .leading)
                     .textSelection(.enabled)
                 Spacer(minLength: 8)
+                Picker("", selection: $pane) {
+                    Label(String(localized: "Terminal"), systemImage: "terminal").tag(Pane.terminal)
+                    Label(String(localized: "History"), systemImage: "text.bubble").tag(Pane.history)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
                 StatusPill(session: session)
             }
             if let msg = session.live?.message, session.status == .needsInput {
@@ -61,29 +108,25 @@ struct SessionDetail: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
             }
-            TimelineView(.periodic(from: .now, by: 30)) { context in
-                if session.isCacheCold(at: context.date), let meta = session.meta, meta.contextTokens >= Self.coldCacheWarningTokens {
-                    ColdCacheBanner(session: session, tokens: meta.contextTokens)
-                }
+            if session.isCacheCold(at: now), let meta = session.meta, meta.contextTokens >= Self.coldCacheWarningTokens {
+                ColdCacheBanner(session: session, tokens: meta.contextTokens)
             }
             if case .failed(let message) = store.handoffs[session.id] {
                 Label(message, systemImage: "exclamationmark.triangle.fill")
                     .font(.callout)
                     .foregroundStyle(.red)
             }
-            HStack(spacing: 14) {
+            HStack(spacing: 12) {
                 if let meta = session.meta {
                     ContextGauge(tokens: meta.contextTokens, window: meta.contextWindow)
-                    if let model = meta.model {
-                        Text(model).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    }
+                        .help([meta.model, String(localized: "Context window usage of the last reply")].compactMap { $0 }.joined(separator: " · "))
                     if session.agent == .claude {
                         Button {
                             showInsights.toggle()
                         } label: {
-                            Label(String(localized: "Token usage"), systemImage: "chart.bar.xaxis")
-                                .font(.caption)
+                            Image(systemName: "chart.bar.xaxis")
                         }
+                        .help(String(localized: "Token usage"))
                         .buttonStyle(.borderless)
                         .popover(isPresented: $showInsights, arrowEdge: .bottom) {
                             TokenInsightsView(path: meta.path, modified: meta.modified, startExpanded: true)
@@ -102,7 +145,7 @@ struct SessionDetail: View {
 
     @ViewBuilder
     private var actions: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 4) {
             if session.isLive {
                 Button {
                     store.focus(session.id)
@@ -136,6 +179,7 @@ struct SessionDetail: View {
             .menuIndicator(.hidden)
             .fixedSize()
         }
+        .labelStyle(.iconOnly)
         .controlSize(.small)
     }
 
@@ -218,15 +262,20 @@ struct ProjectBar: View {
                 .foregroundStyle(Color.accentColor)
             Text(session.project)
                 .font(.headline)
+                .lineLimit(1)
             if let branch = session.meta?.gitBranch, branch != "HEAD" {
                 Label(branch, systemImage: "arrow.triangle.branch")
                     .font(.caption.weight(.medium))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: 220)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 2)
                     .background(.quaternary, in: Capsule())
             }
             AgentBadge(agent: session.agent)
             Text(displayPath)
+                .frame(minWidth: 0)
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -506,6 +555,7 @@ struct ColdCacheBanner: View {
                 .foregroundStyle(.blue)
             Text("The prompt cache of this chat has expired, so the next message re-reads all \(ContextGauge.short(tokens)) tokens at full price. Compact it or hand off to a fresh chat first.")
                 .font(.callout)
+                .frame(minWidth: 120, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
             if TerminalBridge.canCompact(session) {
@@ -540,12 +590,12 @@ struct ContextGauge: View {
     var body: some View {
         let fraction = window > 0 ? min(1, Double(tokens) / Double(window)) : 0
         HStack(spacing: 8) {
-            ContextBar(fraction: fraction).frame(width: 90, height: 6)
-            Text("\(Int(fraction * 100))% · \(Self.short(tokens)) / \(Self.short(window))")
+            ContextBar(fraction: fraction).frame(width: 70, height: 6)
+            Text("\(Int(fraction * 100))% · \(Self.short(tokens))")
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
-        .help(String(localized: "Context window usage of the last reply"))
     }
 
     static func short(_ n: Int) -> String {

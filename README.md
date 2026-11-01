@@ -23,6 +23,7 @@ Measure your own usage with `make stats`. The report is computed locally from `~
 
 ## Features
 
+- **A real terminal in the app.** Open any chat right inside ThreadHaven and work with Claude Code or Codex exactly as in Terminal, slash commands included. Chats keep running while you switch between them.
 - **All chats in one list.** Running chats on top, recent ones below, grouped by status, searchable by title, folder or last prompt.
 - **Instant switching.** Press <kbd>⌃⌥Space</kbd> anywhere to search your chats, or use <kbd>⌘1</kbd>–<kbd>⌘9</kbd> in the window, and jump straight to the right tab in Terminal or iTerm2.
 - **Notifications.** Get a notification when a chat finishes its turn or needs your approval. Clicking it opens the right tab.

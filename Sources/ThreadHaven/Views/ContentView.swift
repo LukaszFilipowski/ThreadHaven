@@ -28,7 +28,7 @@ struct ContentView: View {
         let liveSessions = SidebarLayout(sessions: sessions).running
 
         NavigationSplitView {
-            ChatSidebar(selection: $selection, sessions: sessions)
+            ChatSidebar(selection: $selection, sessions: sessions, pending: store.terminals.pending)
                 .searchable(text: $search, placement: .sidebar, prompt: Text("Search chats"))
                 .navigationSplitViewColumnWidth(min: 280, ideal: 340, max: 480)
                 .background(shortcutButtons(liveSessions))
@@ -36,6 +36,20 @@ struct ContentView: View {
             if let id = selection, let s = store.session(id) {
                 SessionDetail(session: s)
                     .id(id)
+            } else if let id = selection, let pending = store.terminals.pending.first(where: { $0.id == id }) {
+                VStack(spacing: 0) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "folder.fill").foregroundStyle(Color.accentColor)
+                        Text(pending.project).font(.headline)
+                        Text(String(localized: "New chat")).foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 14)
+                    Divider()
+                    TerminalPane(id: id, session: nil)
+                }
+                .id(id)
             } else {
                 ContentUnavailableView(
                     String(localized: "Pick a chat"),
@@ -71,6 +85,11 @@ struct ContentView: View {
         }
         .onChange(of: selection) { _, id in
             if let id { store.markSeen(id) }
+        }
+        .onChange(of: store.selectionRequest) { _, request in
+            guard let request else { return }
+            selection = request
+            store.selectionRequest = nil
         }
         .onChange(of: sessions.isEmpty, initial: true) { _, empty in
             if selection == nil, !empty { selection = SidebarLayout(sessions: sessions).ordered.first?.id }

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- A real terminal inside ThreadHaven (SwiftTerm): open any chat right in the app, with slash commands, approvals and keyboard shortcuts working as in Terminal; switching chats keeps their processes running, and the chat history moved to its own tab that follows the transcript live
 - Live status for Codex CLI sessions: an optional notify script in `~/.codex/config.toml` shows Working and Your turn, sends notifications, and lets you switch to the tab or send a prompt when Codex runs in the foreground of Terminal or iTerm2
 - Linux desktop app preview (GTK4 and libadwaita, built as a Flatpak) with recent Claude Code and Codex sessions, recent messages, token usage and resuming in a terminal
 - Remote access (preview): a web app served on 127.0.0.1 and published in your tailnet with `tailscale serve`, with per-device tokens in the Keychain, QR pairing, chat status over server-sent events, recent messages, sending prompts to foreground chats and Web Push notifications

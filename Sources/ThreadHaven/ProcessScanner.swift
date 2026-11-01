@@ -25,6 +25,11 @@ enum ProcessScanner {
         return String(decoding: data, as: UTF8.self)
     }
 
+    static func tty(ofProcess pid: pid_t) -> String? {
+        let output = ps(["-o", "tty=", "-p", String(pid)]).trimmingCharacters(in: .whitespacesAndNewlines)
+        return output.isEmpty || output == "??" ? nil : output
+    }
+
     static func ttys(fromPSOutput output: String, agent: Agent = .claude) -> Set<String> {
         var ttys = Set<String>()
         for line in output.split(separator: "\n") {

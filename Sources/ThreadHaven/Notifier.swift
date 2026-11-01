@@ -28,6 +28,20 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate, @unchecked Sen
         UNUserNotificationCenter.current().add(request)
     }
 
+    func authorizationStatus() async -> UNAuthorizationStatus {
+        guard available else { return .denied }
+        return await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+    }
+
+    func sendTest() {
+        post(
+            sessionId: "threadhaven-test",
+            title: "ThreadHaven",
+            subtitle: String(localized: "Test notification"),
+            body: String(localized: "You will see this when a chat needs your approval or finishes its turn.")
+        )
+    }
+
     func clear(_ sessionId: String) {
         guard available else { return }
         UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [sessionId])

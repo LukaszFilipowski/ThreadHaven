@@ -1,5 +1,6 @@
 import ServiceManagement
 import SwiftUI
+import UserNotifications
 
 struct SettingsView: View {
     @Environment(SessionStore.self) private var store
@@ -7,18 +8,21 @@ struct SettingsView: View {
     @AppStorage(Preferences.daysBack) private var daysBack = 14
     @AppStorage(Preferences.showBackground) private var showBackground = false
     @AppStorage(Preferences.quickSwitcher) private var quickSwitcher = true
+    @AppStorage(Preferences.openInApp) private var openInApp = true
     @AppStorage(Preferences.notify) private var notify = true
     @AppStorage(Preferences.autoCompact) private var autoCompact = false
     @AppStorage(Preferences.compactTokens) private var compactTokens = 150_000
     @AppStorage(Preferences.handoffModel) private var handoffModel = "haiku"
     @AppStorage(Preferences.polishModel) private var polishModel = "haiku"
     @AppStorage("dictationLocale") private var dictationLocale = Locale.current.identifier
+    @State private var notificationStatus = UNAuthorizationStatus.notDetermined
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
         Form {
             Section(String(localized: "General")) {
-                Picker(String(localized: "Terminal for new chats"), selection: $terminal) {
+                Toggle(String(localized: "Open chats in ThreadHaven's terminal"), isOn: $openInApp)
+                Picker(String(localized: "External terminal"), selection: $terminal) {
                     ForEach(TerminalApp.allCases) { Text($0.name).tag($0.rawValue) }
                 }
                 Stepper(value: $daysBack, in: 1...90) {
@@ -38,6 +42,26 @@ struct SettingsView: View {
 
             Section(String(localized: "Notifications")) {
                 Toggle(String(localized: "Notify when a chat finishes or needs approval"), isOn: $notify)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("System notifications")
+                        Spacer()
+                        Label(notificationStatusText, systemImage: notificationStatus == .authorized ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                            .foregroundStyle(notificationStatus == .authorized ? Color.green : Color.orange)
+                    }
+                    HStack(spacing: 8) {
+                        Spacer()
+                        Button(String(localized: "Send Test")) { Notifier.shared.sendTest() }
+                        if notificationStatus != .authorized {
+                            Button(String(localized: "Open System Settings")) {
+                                if let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension") {
+                                    NSWorkspace.shared.open(url)
+                                }
+                            }
+                        }
+                    }
+                }
+                .task { notificationStatus = await Notifier.shared.authorizationStatus() }
                 LabeledContent(String(localized: "Claude Code hook")) {
                     if store.hooksInstalled {
                         HStack {
@@ -125,5 +149,13 @@ struct SettingsView: View {
 
     private var compactTokensValue: Binding<Double> {
         Binding(get: { Double(compactTokens) }, set: { compactTokens = Int($0) })
+    }
+
+    private var notificationStatusText: String {
+        switch notificationStatus {
+        case .authorized, .provisional, .ephemeral: String(localized: "Allowed")
+        case .denied: String(localized: "Turned off in System Settings")
+        default: String(localized: "Not asked yet")
+        }
     }
 }
