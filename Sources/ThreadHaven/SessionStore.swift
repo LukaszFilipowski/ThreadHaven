@@ -11,6 +11,8 @@ final class SessionStore {
     private(set) var hooksInstalled = HookInstaller.isInstalled
     private(set) var codexNotify = CodexNotifyInstaller.state
     private(set) var lastError: String?
+    let terminals = EmbeddedTerminals()
+    var selectionRequest: String?
     private(set) var handoffs: [String: HandoffState] = [:]
 
     enum HandoffState: Equatable {
@@ -82,18 +84,36 @@ final class SessionStore {
     }
 
     func focus(_ id: String) {
-        guard let session = session(id) else { return }
         markSeen(id)
-        if !TerminalBridge.focus(session) {
-            NSApp.activate(ignoringOtherApps: true)
+        if terminals.view(for: id) != nil {
+            show(id)
+            return
         }
+        guard let session = session(id) else { return }
+        if !TerminalBridge.focus(session) {
+            show(id)
+        }
+    }
+
+    func show(_ id: String) {
+        selectionRequest = id
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     @discardableResult
     func send(_ text: String, to id: String) -> Bool {
+        if terminals.isRunning(id) {
+            markSeen(id)
+            return terminals.send(text, to: id)
+        }
         guard let session = session(id), TerminalBridge.send(text, to: session) else { return false }
         markSeen(id)
         return true
+    }
+
+    func canSend(to id: String) -> Bool {
+        if terminals.isRunning(id) { return true }
+        return session(id).map(TerminalBridge.canSend) ?? false
     }
 
     func compact(_ id: String) {
@@ -106,15 +126,34 @@ final class SessionStore {
         let prompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         var arguments = session.agent.resumeArguments(id)
         if !prompt.isEmpty { arguments += ["--", prompt] }
-        TerminalBridge.openNew(cwd: session.cwd, agent: session.agent, arguments: arguments, terminal: Preferences.terminal)
         markSeen(id)
+        if defaults.bool(forKey: Preferences.openInApp), !session.isLive {
+            if terminals.open(id: id, cwd: session.cwd, agent: session.agent, arguments: arguments) {
+                show(id)
+                return
+            }
+        }
+        TerminalBridge.openNew(cwd: session.cwd, agent: session.agent, arguments: arguments, terminal: Preferences.terminal)
     }
 
     func newChat(in directory: String, continueLast: Bool, prompt: String) {
         var arguments = continueLast ? ["--continue"] : []
         let prompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         if !prompt.isEmpty { arguments += ["--", prompt] }
+        if defaults.bool(forKey: Preferences.openInApp),
+           let id = terminals.startNew(cwd: directory, agent: .claude, arguments: arguments) {
+            show(id)
+            return
+        }
         TerminalBridge.openNew(cwd: directory, arguments: arguments, terminal: Preferences.terminal)
+    }
+
+    private func adoptEmbeddedTerminal(tty: String?, sessionId: String) {
+        guard let tty, terminals.view(for: sessionId) == nil else { return }
+        for id in terminals.ids where terminals.isRunning(id) && terminals.tty(for: id) == tty {
+            terminals.adopt(pending: id, as: sessionId)
+            if selectionRequest == id || selectionRequest == nil { selectionRequest = sessionId }
+        }
     }
 
     func handOff(_ id: String) {
@@ -283,10 +322,12 @@ final class SessionStore {
             info.ended = false
             if info.status != .working { info.status = .idle }
             endOtherSessions(on: info.tty, except: id)
+            adoptEmbeddedTerminal(tty: info.tty, sessionId: id)
         case "UserPromptSubmit":
             info.ended = false
             info.markWorking()
             endOtherSessions(on: info.tty, except: id)
+            adoptEmbeddedTerminal(tty: info.tty, sessionId: id)
         case "PostToolUse":
             if info.status == .needsInput { info.markWorking() }
         case "Notification" where event.notificationType == "idle_prompt":

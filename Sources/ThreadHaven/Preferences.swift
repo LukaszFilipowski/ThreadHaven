@@ -10,6 +10,7 @@ enum Preferences {
     static let handoffModel = "handoffModel"
     static let polishModel = "polishModel"
     static let quickSwitcher = "quickSwitcher"
+    static let openInApp = "openInApp"
     static let remoteEnabled = "remoteEnabled"
     static let remotePort = "remotePort"
     static let remoteIdleHours = "remoteIdleHours"
@@ -30,6 +31,7 @@ enum Preferences {
             handoffModel: "haiku",
             polishModel: "haiku",
             quickSwitcher: true,
+            openInApp: true,
             remoteEnabled: false,
             remoteIdleHours: 8,
             remotePreviews: false,
