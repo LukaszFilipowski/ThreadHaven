@@ -16,7 +16,7 @@ final class EmbeddedTerminals {
     private(set) var running: Set<String> = []
     private(set) var pending: [Pending] = []
 
-    @ObservationIgnored private var views: [String: LocalProcessTerminalView] = [:]
+    private var views: [String: LocalProcessTerminalView] = [:]
     @ObservationIgnored private var observers: [String: ProcessObserver] = [:]
 
     func view(for id: String) -> LocalProcessTerminalView? { views[id] }

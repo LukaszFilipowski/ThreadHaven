@@ -246,3 +246,11 @@
 "Opens in ThreadHaven" = "Otworzy się w ThreadHaven";
 "Open chats in ThreadHaven's terminal" = "Otwieraj czaty w terminalu ThreadHaven";
 "External terminal" = "Zewnętrzny terminal";
+"Test notification" = "Powiadomienie testowe";
+"You will see this when a chat needs your approval or finishes its turn." = "Zobaczysz to, gdy czat będzie czekał na Twoją zgodę albo skończy swoją turę.";
+"System notifications" = "Powiadomienia systemowe";
+"Send Test" = "Wyślij testowe";
+"Open System Settings" = "Otwórz Ustawienia systemowe";
+"Allowed" = "Włączone";
+"Turned off in System Settings" = "Wyłączone w Ustawieniach systemowych";
+"Not asked yet" = "Jeszcze nie zapytano";

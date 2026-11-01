@@ -369,6 +369,7 @@ final class SessionStore {
            info.isInteractive || defaults.bool(forKey: Preferences.showBackground) {
             let title = session(id)?.title ?? (info.agent ?? .claude).name
             Notifier.shared.post(sessionId: id, title: title, subtitle: info.status.label, body: alert)
+            if info.status == .needsInput, !NSApp.isActive { NSApp.requestUserAttention(.informationalRequest) }
         }
     }
 
