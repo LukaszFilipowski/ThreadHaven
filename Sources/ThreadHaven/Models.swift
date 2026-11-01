@@ -82,6 +82,11 @@ struct Session: Identifiable, Sendable {
         return project
     }
 
+    var isEmpty: Bool {
+        guard let meta else { return false }
+        return meta.title == nil && meta.firstPrompt == nil && meta.lastPrompt == nil && meta.contextTokens == 0
+    }
+
     var isLive: Bool {
         guard let live, !live.ended, live.isInteractive else { return false }
         return processAlive

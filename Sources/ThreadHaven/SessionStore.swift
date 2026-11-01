@@ -51,7 +51,7 @@ final class SessionStore {
         let showBackground = defaults.bool(forKey: Preferences.showBackground)
         return Set(metas.keys).union(live.keys)
             .compactMap(session)
-            .filter { ($0.meta != nil || $0.isLive) && (showBackground || $0.isInteractive) }
+            .filter { ($0.meta != nil || $0.isLive) && (showBackground || $0.isInteractive) && ($0.isLive || !$0.isEmpty) }
             .sorted { a, b in
                 a.isLive != b.isLive ? a.isLive : a.lastActivity > b.lastActivity
             }
@@ -101,9 +101,13 @@ final class SessionStore {
         if send("/compact", to: id) { lastCompact[id] = Date() }
     }
 
-    func resume(_ id: String) {
+    func resume(_ id: String, prompt: String = "") {
         guard let session = session(id), !session.cwd.isEmpty else { return }
-        TerminalBridge.openNew(cwd: session.cwd, agent: session.agent, arguments: session.agent.resumeArguments(id), terminal: Preferences.terminal)
+        let prompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        var arguments = session.agent.resumeArguments(id)
+        if !prompt.isEmpty { arguments += ["--", prompt] }
+        TerminalBridge.openNew(cwd: session.cwd, agent: session.agent, arguments: arguments, terminal: Preferences.terminal)
+        markSeen(id)
     }
 
     func newChat(in directory: String, continueLast: Bool, prompt: String) {
@@ -186,16 +190,21 @@ final class SessionStore {
         let days = Double(max(1, defaults.integer(forKey: Preferences.daysBack)))
         let since = Date().addingTimeInterval(-days * 86_400)
         let known = stamps
+        let showBackground = defaults.bool(forKey: Preferences.showBackground)
         Task {
             let (current, updated) = await Task.detached(priority: .utility) {
                 let claude = TranscriptReader.listTranscripts(since: since)
                 let codex = CodexReader.listSessions(since: since)
-                let updated = claude.filter { known[$0.key] != $0.value }.map { TranscriptReader.readMeta(url: $0.key, stamp: $0.value) }
+                let updated = claude
+                    .filter { known[$0.key] != $0.value && (showBackground || TranscriptReader.looksInteractive($0.key)) }
+                    .map { TranscriptReader.readMeta(url: $0.key, stamp: $0.value) }
                     + codex.filter { known[$0.key] != $0.value }.map { CodexReader.readMeta(url: $0.key, stamp: $0.value) }
                 return (claude.merging(codex) { first, _ in first }, updated)
             }.value
-            let removed = Set(stamps.keys).subtracting(current.keys).map(\.path)
-            metas = metas.filter { !removed.contains($0.value.path) }
+            let removed = Set(Set(stamps.keys).subtracting(current.keys).map(\.path))
+            if !removed.isEmpty {
+                metas = metas.filter { !removed.contains($0.value.path) }
+            }
             stamps = current
             for meta in updated {
                 metas[meta.sessionId] = meta
