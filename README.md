@@ -37,7 +37,7 @@ Measure your own usage with `make stats`. The report is computed locally from `~
 
 ## Requirements
 
-- macOS 14 Sonoma or later
+- macOS 15 Sequoia or later
 - [Claude Code](https://docs.claude.com/en/docs/claude-code) CLI
 - Swift 6 toolchain (Xcode 16 or later) to build from source
 

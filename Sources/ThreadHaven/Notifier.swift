@@ -6,13 +6,17 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate, @unchecked Sen
 
     var onOpen: ((String) -> Void)?
 
+    private var available: Bool { Bundle.main.bundleIdentifier != nil && Bundle.main.bundleURL.pathExtension == "app" }
+
     func setup() {
+        guard available else { return }
         let center = UNUserNotificationCenter.current()
         center.delegate = self
         center.requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
     }
 
     func post(sessionId: String, title: String, subtitle: String, body: String) {
+        guard available else { return }
         let content = UNMutableNotificationContent()
         content.title = title
         content.subtitle = subtitle
@@ -25,6 +29,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate, @unchecked Sen
     }
 
     func clear(_ sessionId: String) {
+        guard available else { return }
         UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [sessionId])
     }
 

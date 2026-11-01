@@ -75,9 +75,10 @@ public enum TranscriptReader {
             if meta.lastPrompt == nil, contains(line, #""last-prompt""#), let obj = json(line) {
                 meta.lastPrompt = obj["lastPrompt"] as? String
             }
-            if meta.cwd == nil || meta.entrypoint == nil, contains(line, #""cwd":""#), let obj = json(line) {
+            if meta.cwd == nil || meta.entrypoint == nil || meta.gitBranch == nil, contains(line, #""cwd":""#), let obj = json(line) {
                 if meta.cwd == nil { meta.cwd = obj["cwd"] as? String }
                 if meta.entrypoint == nil { meta.entrypoint = obj["entrypoint"] as? String }
+                if meta.gitBranch == nil, let branch = obj["gitBranch"] as? String, !branch.isEmpty { meta.gitBranch = branch }
             }
             if foundUsage, foundTTL, aiTitle != nil, meta.cwd != nil, meta.entrypoint != nil { break }
         }
@@ -121,6 +122,12 @@ public enum TranscriptReader {
         try? Date(string, strategy: .iso8601.year().month().day().time(includingFractionalSeconds: true))
     }
 
+    public static func looksInteractive(_ url: URL) -> Bool {
+        let head = readChunk(url: url, fromEnd: false, bytes: 64_000)
+        let background = head.range(of: Data(#""entrypoint":"sdk-"#.utf8)) != nil
+        return !background || head.range(of: Data(#""entrypoint":"cli""#.utf8)) != nil
+    }
+
     public static func recentMessages(path: String, limit: Int = 60) -> [ChatMessage] {
         let url = URL(fileURLWithPath: path)
         let chunk = readChunk(url: url, fromEnd: true, bytes: 3_000_000)
@@ -133,28 +140,79 @@ public enum TranscriptReader {
             let id = obj["uuid"] as? String ?? UUID().uuidString
             let date = (obj["timestamp"] as? String).flatMap(parseDate)
             if isUser {
-                guard let text = userText(obj), !text.hasPrefix("<") else { continue }
+                if let raw = rawUserText(obj), let command = commandMessage(raw, id: id, date: date) {
+                    out.append(command)
+                    continue
+                }
+                guard let text = userText(obj), !text.isEmpty else { continue }
                 out.append(ChatMessage(id: id, role: .user, text: String(text.prefix(4000)), date: date))
             } else if let msg = obj["message"] as? [String: Any], let blocks = msg["content"] as? [[String: Any]] {
-                let text = blocks.compactMap { $0["type"] as? String == "text" ? $0["text"] as? String : nil }
-                    .joined(separator: "\n")
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !text.isEmpty else { continue }
-                out.append(ChatMessage(id: id, role: .assistant, text: String(text.prefix(6000)), date: date))
+                for (index, block) in blocks.enumerated() {
+                    let blockID = "\(id)-\(index)"
+                    switch block["type"] as? String {
+                    case "text":
+                        let text = (block["text"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !text.isEmpty {
+                            out.append(ChatMessage(id: blockID, role: .assistant, text: String(text.prefix(12000)), date: date))
+                        }
+                    case "tool_use":
+                        out.append(ChatMessage(id: blockID, role: .tool, text: toolSummary(block), date: date))
+                    default:
+                        break
+                    }
+                }
             }
         }
         return Array(out.suffix(limit))
     }
 
     static func userText(_ obj: [String: Any]) -> String? {
+        guard let raw = rawUserText(obj) else { return nil }
+        let text = withoutTaggedBlocks(raw).trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.isEmpty ? nil : text
+    }
+
+    static func rawUserText(_ obj: [String: Any]) -> String? {
         guard let msg = obj["message"] as? [String: Any] else { return nil }
-        if let s = msg["content"] as? String { return s.trimmingCharacters(in: .whitespacesAndNewlines) }
-        if let blocks = msg["content"] as? [[String: Any]] {
-            let texts = blocks.compactMap { $0["type"] as? String == "text" ? $0["text"] as? String : nil }
-            guard !texts.isEmpty else { return nil }
-            return texts.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        if let s = msg["content"] as? String { return s }
+        guard let blocks = msg["content"] as? [[String: Any]] else { return nil }
+        let texts = blocks.compactMap { $0["type"] as? String == "text" ? $0["text"] as? String : nil }
+        return texts.isEmpty ? nil : texts.joined(separator: "\n")
+    }
+
+    static func commandMessage(_ raw: String, id: String, date: Date?) -> ChatMessage? {
+        if let name = tagContent("command-name", in: raw) {
+            let arguments = tagContent("command-args", in: raw) ?? ""
+            let text = [name, arguments].filter { !$0.isEmpty }.joined(separator: " ")
+            return ChatMessage(id: id, role: .user, text: text, date: date)
+        }
+        for tag in ["local-command-stdout", "local-command-stderr"] {
+            if let output = tagContent(tag, in: raw), !output.isEmpty {
+                return ChatMessage(id: id, role: .output, text: String(output.prefix(6000)), date: date)
+            }
         }
         return nil
+    }
+
+    static func tagContent(_ tag: String, in text: String) -> String? {
+        guard let start = text.range(of: "<\(tag)>"), let end = text.range(of: "</\(tag)>", range: start.upperBound..<text.endIndex) else { return nil }
+        return String(text[start.upperBound..<end.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static let taggedBlock = try! NSRegularExpression(pattern: "<([a-zA-Z][a-zA-Z0-9_-]*)(\\s[^>]*)?>[\\s\\S]*?</\\1>")
+
+    static func withoutTaggedBlocks(_ text: String) -> String {
+        let range = NSRange(text.startIndex..., in: text)
+        return taggedBlock.stringByReplacingMatches(in: text, range: range, withTemplate: "")
+    }
+
+    static func toolSummary(_ block: [String: Any]) -> String {
+        let name = block["name"] as? String ?? "Tool"
+        let input = block["input"] as? [String: Any] ?? [:]
+        let keys = ["description", "command", "file_path", "pattern", "path", "url", "query", "prompt"]
+        guard let detail = keys.lazy.compactMap({ input[$0] as? String }).first(where: { !$0.isEmpty }) else { return name }
+        let line = detail.prefix { !$0.isNewline }
+        return "\(name) · \(line.count > 140 ? line.prefix(139) + "…" : line)"
     }
 
     static func readChunk(url: URL, fromEnd: Bool, bytes: UInt64) -> Data {

@@ -22,7 +22,7 @@ enum Preferences {
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
             terminalKey: TerminalApp.terminal.rawValue,
-            daysBack: 14,
+            daysBack: 90,
             showBackground: false,
             notify: true,
             autoCompact: false,

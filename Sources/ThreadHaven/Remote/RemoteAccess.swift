@@ -443,7 +443,7 @@ extension RemoteAccess: RemoteBackend {
         let messages = await Task.detached(priority: .userInitiated) {
             agent == .codex ? CodexReader.recentMessages(path: path, limit: 40) : TranscriptReader.recentMessages(path: path, limit: 40)
         }.value
-        return messages.map { RemoteMessage(role: $0.role == .user ? "user" : "assistant", text: $0.text, date: $0.date) }
+        return messages.filter { $0.role != .tool }.map { RemoteMessage(role: $0.role == .user ? "user" : "assistant", text: $0.text, date: $0.date) }
     }
 
     func remotePrompt(_ text: String, to id: String, from device: RemoteDevice) -> PromptOutcome {

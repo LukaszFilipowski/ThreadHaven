@@ -28,6 +28,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- Redesigned chat list: running chats on top, the rest grouped by project with counts and collapsible sections, steady order while you scroll, arrow-key navigation
+- Redesigned chat view: project, git branch and path up front, readable messages with Markdown and code blocks, collapsed tool calls, long messages folded, and scrolling that no longer jumps back to the bottom
+- The composer works for every chat: it sends to a running chat or resumes a stopped one with your message; Return sends, Shift-Return adds a line, and slash commands switch to the terminal to show their result
+- Chats from the last 90 days are listed by default, and background SDK sessions are skipped before they are read
+- ThreadHaven now requires macOS 15
 - Auto-compact uses an absolute token threshold (150k by default) instead of a share of the context window
 
 ### Security

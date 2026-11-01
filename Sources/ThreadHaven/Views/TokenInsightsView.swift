@@ -5,6 +5,12 @@ struct TokenInsightsView: View {
     let path: String
     let modified: Date?
 
+    init(path: String, modified: Date?, startExpanded: Bool = false) {
+        self.path = path
+        self.modified = modified
+        _expanded = State(initialValue: startExpanded)
+    }
+
     @State private var expanded = false
     @State private var stats: TokenStats?
 

@@ -5,6 +5,10 @@ struct ContentView: View {
     @Environment(\.openWindow) private var openWindow
     @AppStorage(Preferences.showBackground) private var showBackground = false
     @State private var selection: String?
+
+    init(selection: String? = nil) {
+        _selection = State(initialValue: selection)
+    }
     @State private var search = ""
     @State private var showNewChat = false
 
@@ -15,44 +19,19 @@ struct ContentView: View {
         return all.filter {
             $0.title.lowercased().contains(q) || $0.cwd.lowercased().contains(q)
                 || ($0.meta?.lastPrompt?.lowercased().contains(q) ?? false)
+                || ($0.meta?.gitBranch?.lowercased().contains(q) ?? false)
         }
     }
 
     var body: some View {
         let sessions = filtered
-        let liveSessions = sessions.filter(\.isLive)
-        let recent = sessions.filter { !$0.isLive }
+        let liveSessions = SidebarLayout(sessions: sessions).running
 
         NavigationSplitView {
-            List(selection: $selection) {
-                if !store.hooksInstalled {
-                    HooksBanner()
-                }
-                if !liveSessions.isEmpty {
-                    Section(String(localized: "Running")) {
-                        ForEach(Array(liveSessions.enumerated()), id: \.element.id) { index, s in
-                            SessionRow(session: s, shortcut: index < 9 ? index + 1 : nil)
-                                .tag(s.id)
-                        }
-                    }
-                }
-                Section(String(localized: "Recent")) {
-                    ForEach(recent) { s in
-                        SessionRow(session: s, shortcut: nil).tag(s.id)
-                    }
-                }
-            }
-            .contextMenu(forSelectionType: String.self) { ids in
-                if let id = ids.first, let s = store.session(id) {
-                    SessionActions(session: s)
-                }
-            } primaryAction: { ids in
-                guard let id = ids.first, let s = store.session(id) else { return }
-                if s.isLive { store.focus(id) } else { store.resume(id) }
-            }
-            .searchable(text: $search, placement: .sidebar, prompt: Text("Search chats"))
-            .navigationSplitViewColumnWidth(min: 280, ideal: 330, max: 460)
-            .background(shortcutButtons(liveSessions))
+            ChatSidebar(selection: $selection, sessions: sessions)
+                .searchable(text: $search, placement: .sidebar, prompt: Text("Search chats"))
+                .navigationSplitViewColumnWidth(min: 280, ideal: 340, max: 480)
+                .background(shortcutButtons(liveSessions))
         } detail: {
             if let id = selection, let s = store.session(id) {
                 SessionDetail(session: s)
@@ -92,6 +71,9 @@ struct ContentView: View {
         }
         .onChange(of: selection) { _, id in
             if let id { store.markSeen(id) }
+        }
+        .onChange(of: sessions.isEmpty, initial: true) { _, empty in
+            if selection == nil, !empty { selection = SidebarLayout(sessions: sessions).ordered.first?.id }
         }
         .onChange(of: selectionNeedsAttention) { _, attention in
             if attention, NSApp.isActive, let id = selection { store.markSeen(id) }
@@ -136,7 +118,6 @@ struct HooksBanner: View {
         }
         .padding(10)
         .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
-        .listRowSeparator(.hidden)
     }
 }
 

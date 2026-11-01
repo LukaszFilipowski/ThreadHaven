@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "ThreadHaven",
     defaultLocalization: "en",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v15)],
     products: [
         .executable(name: "threadhaven-stats", targets: ["threadhaven-stats"]),
         .library(name: "ThreadHavenCore", targets: ["ThreadHavenCore"]),

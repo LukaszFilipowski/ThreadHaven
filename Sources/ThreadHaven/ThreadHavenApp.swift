@@ -21,6 +21,8 @@ struct ThreadHavenApp: App {
                 .frame(minWidth: 820, minHeight: 520)
         }
         .defaultSize(width: 1100, height: 720)
+        .defaultLaunchBehavior(.presented)
+        .restorationBehavior(.disabled)
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button(String(localized: "New Chat…")) {
