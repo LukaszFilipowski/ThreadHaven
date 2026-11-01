@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-01
+
 ### Added
 
 - A real terminal inside ThreadHaven (SwiftTerm): open any chat right in the app, with slash commands, approvals and keyboard shortcuts working as in Terminal; switching chats keeps their processes running, and the chat history moved to its own tab that follows the transcript live
