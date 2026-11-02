@@ -1,8 +1,8 @@
 # ThreadHaven
 
-A lightweight native macOS app for keeping track of your Claude Code chats.
+A native macOS home for your Claude Code and Codex CLI chats.
 
-ThreadHaven lists every Claude Code session on your Mac, tells you which ones are working, waiting for your approval or done, and takes you to the right terminal tab in one click. It lives in your menu bar and a small window, and it never touches your transcripts.
+ThreadHaven lists every chat on your Mac grouped by project, shows which ones are working, waiting for your approval or done, and runs them in a real terminal right inside the app. Switch between chats without losing a running session, get a notification when one needs you, and keep an eye on how many tokens each chat burns. Your transcripts are only read, never changed.
 
 ## Why it saves tokens
 
@@ -23,19 +23,31 @@ Measure your own usage with `make stats`. The report is computed locally from `~
 
 ## Features
 
-- **A real terminal in the app.** Open any chat right inside ThreadHaven and work with Claude Code or Codex exactly as in Terminal, slash commands included. Chats keep running while you switch between them.
-- **All chats in one list.** Running chats on top, recent ones below, grouped by status, searchable by title, folder or last prompt.
-- **Instant switching.** Press <kbd>⌃⌥Space</kbd> anywhere to search your chats, or use <kbd>⌘1</kbd>–<kbd>⌘9</kbd> in the window, and jump straight to the right tab in Terminal or iTerm2.
-- **Notifications.** Get a notification when a chat finishes its turn or needs your approval. Clicking it opens the right tab.
-- **New chat in a folder.** <kbd>⌘N</kbd> starts `claude --continue` in any recent folder, so you pick up the previous thread right away.
-- **Context awareness.** Every chat shows how full its context window is. Send `/compact` with one click, or let ThreadHaven do it automatically above a threshold you choose.
-- **Project knowledge.** CLAUDE.md, memory and handoff notes of a project side by side in the Workspace window, with a preview and a fresh chat from any note.
-- **Team marketplaces.** See which plugin marketplaces and plugins a project shares with your team, and add a team marketplace to its `.claude/settings.json` in a click.
-- **Codex CLI sessions.** Recent OpenAI Codex CLI sessions from `~/.codex/sessions` show up next to your Claude Code chats with a small badge. Resume one with `codex resume` in a click. With the optional Codex notify script, running sessions show Working or Your turn, send notifications, and you can switch to their tab or send a prompt from ThreadHaven.
-- **Dictation.** Dictate prompts with on-device speech recognition, then turn a rough note into a clean prompt with one click (uses your own `claude` CLI).
-- **Remote access (preview).** Check chats, get notifications and send prompts from your phone over Tailscale. See [Remote access](#remote-access).
-- **Native and small.** SwiftUI, a universal binary under 3 MB, light and dark mode, English and Polish.
+**Chats**
 
+- **A real terminal in the app.** Open any chat and keep working with Claude Code or Codex exactly as in Terminal: slash commands, approvals and shortcuts included. Chats keep running while you switch between them, and the History tab shows the conversation as readable messages.
+- **One list, grouped by project.** Running chats stay on top in a fixed order, the rest are grouped by project with counts and collapsible sections. Star a chat to keep it under Favorites, search by title, folder, branch or last prompt.
+- **Close a chat in one click.** The ✕ next to a running chat stops Claude or Codex and everything it started, such as running commands and MCP servers. The conversation stays in the list and can be resumed.
+- **Private mode.** One toolbar switch hides everything but the chats that are running right now, handy when you share your screen.
+- **New chat in a folder.** <kbd>⌘N</kbd> starts a chat in any recent folder, continuing the previous thread when it is not already open.
+- **Quick switcher.** Press <kbd>⌃⌥Space</kbd> anywhere to search your chats and jump to one; <kbd>⌘1</kbd>–<kbd>⌘9</kbd> switch between running chats in the window.
+- **Notifications.** A notification, a Dock badge and a Dock bounce when a chat finishes its turn or waits for your approval.
+- **Codex CLI.** Codex sessions show up next to Claude Code chats, with live status through the optional notify script.
+
+**Tokens**
+
+- **Context at a glance.** Every chat shows how full its context window is, with a token usage panel for re-read context, cold cache rebuilds and the heaviest tool results.
+- **Compaction and handoff.** Send `/compact` with one click or automatically above a token threshold, get a warning before continuing a chat whose prompt cache has expired, or hand a long chat off to a fresh one through a short note.
+
+**Projects**
+
+- **Workspace window** (<kbd>⇧⌘I</kbd>). What every chat in a project starts with, per-project switches for MCP servers and plugins, the project's CLAUDE.md, memory and handoff notes, and the plugin marketplaces it shares with your team.
+
+**Everywhere else**
+
+- **Remote access (preview).** Check chats, get notifications and send prompts from your phone over Tailscale. See [Remote access](#remote-access).
+- **Linux (preview).** A GTK app that lists your sessions and resumes them. See [Linux](#linux).
+- **Native and small.** SwiftUI, light and dark mode, English and Polish.
 ## Requirements
 
 - macOS 15 Sequoia or later
@@ -48,7 +60,7 @@ Measure your own usage with `make stats`. The report is computed locally from `~
 
 Grab the latest `ThreadHaven-x.y.z.zip` from the [releases page](../../releases), unzip it and move `ThreadHaven.app` to your Applications folder.
 
-Official releases are signed with a Developer ID and notarized by Apple. If you run a build that is not notarized, macOS will refuse to open it the first time; right-click the app and choose **Open**, or run `xattr -dr com.apple.quarantine ThreadHaven.app`.
+Releases are not signed with an Apple Developer ID yet, so macOS refuses to open the app the first time. Right-click it and choose **Open**, or run `xattr -dr com.apple.quarantine ThreadHaven.app`. The release workflow signs and notarizes builds automatically once Developer ID secrets are configured (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ### Build from source
 
@@ -77,7 +89,7 @@ The hook is a tiny POSIX shell script (`~/.threadhaven/hook.sh`) registered for 
 
 For Codex CLI, **Settings → Notifications → Codex CLI notify** sets the top-level `notify` key in `~/.codex/config.toml` to `~/.threadhaven/codex-notify.sh`. Codex runs it after every turn, and it appends one line with the session id, folder, last reply and terminal, never your prompts. Only that line of the file changes, and the original is backed up once to `config.toml.threadhaven-backup`. If `notify` already runs another program, ThreadHaven leaves it alone; call `~/.threadhaven/codex-notify.sh` from your program with the same JSON argument to use both. Codex reports only finished turns, so there is no approval status for Codex sessions.
 
-Switching tabs and sending prompts use AppleScript, so macOS will ask once for permission to control your terminal.
+Chats opened in ThreadHaven run in an embedded terminal ([SwiftTerm](https://github.com/migueldeicaza/SwiftTerm)) through your login shell, so they see the same `PATH` and environment as in Terminal. For chats that run in Terminal or iTerm2, switching to their tab and sending a prompt use AppleScript, so macOS asks once for permission to control your terminal.
 
 ## Remote access
 
@@ -101,18 +113,18 @@ See [SECURITY.md](SECURITY.md) for details and how to report a vulnerability.
 | Permission | Why |
 | --- | --- |
 | Notifications | Alerts when a chat finishes or needs approval |
-| Automation (Terminal / iTerm2) | Switching to a chat's tab and sending prompts |
+| Automation (Terminal / iTerm2) | Only for chats that run in those apps: switching to their tab and sending prompts |
 | Microphone, Speech Recognition | Dictation, only when you use it |
-
 ## Terminal support
 
-| Terminal | Switch to tab | Send prompt | New chat |
+Chats run best inside ThreadHaven. Chats that are already open in another terminal stay there, and ThreadHaven can still follow them:
+
+| Terminal | Live status | Switch to tab | Send prompt |
 | --- | --- | --- | --- |
+| ThreadHaven | ✓ | ✓ | ✓ |
 | Terminal | ✓ | ✓ | ✓ |
 | iTerm2 | ✓ | ✓ | ✓ |
-| Ghostty | app only | – | ✓ |
-| Others | app only | – | – |
-
+| Ghostty and others | ✓ | app only | – |
 ## Uninstall
 
 Open **Settings → Notifications** and click **Remove** next to the hook (and next to Codex CLI notify if you installed it), then delete `ThreadHaven.app` and `~/.threadhaven`.
@@ -147,8 +159,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and the release process, a
 
 ## Roadmap
 
-Next up are token savings (0.2), a workspace manager for skills, MCP servers and project knowledge (0.3) and team features (0.4), followed by a Linux app and a phone companion that works over Tailscale. See [ROADMAP.md](ROADMAP.md) for details.
-
+Done so far: token savings, the Workspace window, the embedded terminal, Codex CLI support and previews of the Linux app and the phone companion. Next up are a self-hostable end-to-end encrypted relay for phones without Tailscale, native phone apps and team profiles. See [ROADMAP.md](ROADMAP.md) for details.
 ## License
 
 [MIT](LICENSE)

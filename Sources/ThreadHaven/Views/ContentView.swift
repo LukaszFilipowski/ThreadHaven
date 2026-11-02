@@ -5,6 +5,7 @@ struct ContentView: View {
     @Environment(\.openWindow) private var openWindow
     @AppStorage(Preferences.showBackground) private var showBackground = false
     @State private var selection: String?
+    @AppStorage(Preferences.privateMode) private var privateMode = false
 
     init(selection: String? = nil) {
         _selection = State(initialValue: selection)
@@ -28,7 +29,7 @@ struct ContentView: View {
         let liveSessions = SidebarLayout(sessions: sessions).running
 
         NavigationSplitView {
-            ChatSidebar(selection: $selection, sessions: sessions, pending: store.terminals.pending)
+            ChatSidebar(selection: $selection, sessions: privateMode ? sessions.filter(\.isLive) : sessions, pending: store.terminals.pending)
                 .searchable(text: $search, placement: .sidebar, prompt: Text("Search chats"))
                 .navigationSplitViewColumnWidth(min: 280, ideal: 340, max: 480)
                 .background(shortcutButtons(liveSessions))
@@ -41,8 +42,11 @@ struct ContentView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "folder.fill").foregroundStyle(Color.accentColor)
                         Text(pending.project).font(.headline)
-                        Text(String(localized: "New chat")).foregroundStyle(.secondary)
+                        Text(pending.linkedSession.flatMap { store.session($0)?.title } ?? String(localized: "New chat"))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                         Spacer()
+                        CloseChatButton { store.requestClose(id) }
                     }
                     .padding(.horizontal, 18)
                     .padding(.vertical, 14)
@@ -59,6 +63,12 @@ struct ContentView: View {
             }
         }
         .toolbar {
+            ToolbarItem(placement: .navigation) {
+                Toggle(isOn: $privateMode) {
+                    Label(String(localized: "Private Mode"), systemImage: privateMode ? "eye.slash.fill" : "eye.slash")
+                }
+                .help(String(localized: "Private mode shows only running chats"))
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     openWindow(id: "workspace")
@@ -84,7 +94,20 @@ struct ContentView: View {
             showNewChat = true
         }
         .onChange(of: selection) { _, id in
+            store.selectedID = id
             if let id { store.markSeen(id) }
+        }
+        .confirmationDialog(
+            closeTitle,
+            isPresented: Binding(get: { store.closeRequest != nil }, set: { if !$0 { store.closeRequest = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button(String(localized: "Close Chat"), role: .destructive) {
+                if let id = store.closeRequest { store.close(id) }
+                store.closeRequest = nil
+            }
+        } message: {
+            Text("This stops Claude or Codex in this chat and everything it started, such as running commands and MCP servers. The conversation stays in the list and can be resumed.")
         }
         .onChange(of: store.selectionRequest) { _, request in
             guard let request else { return }
@@ -99,7 +122,12 @@ struct ContentView: View {
         }
     }
 
-    private var selectionNeedsAttention: Bool {
+    private var closeTitle: String {
+        let title = store.closeRequest.flatMap { store.session($0)?.title } ?? String(localized: "this chat")
+        return String(localized: "Close “\(title)”?")
+    }
+
+        private var selectionNeedsAttention: Bool {
         selection.flatMap { store.session($0)?.needsAttention } ?? false
     }
 
@@ -162,6 +190,10 @@ struct SessionActions: View {
             store.newChat(in: session.cwd, continueLast: true, prompt: "")
         }
         .disabled(session.cwd.isEmpty)
+        if session.isLive || store.terminals.isRunning(session.id) {
+            Divider()
+            Button(String(localized: "Close Chat…"), role: .destructive) { store.requestClose(session.id) }
+        }
         Divider()
         Button(String(localized: "Show in Finder")) {
             NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: session.cwd)

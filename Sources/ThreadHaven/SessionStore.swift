@@ -14,6 +14,8 @@ final class SessionStore {
     let terminals = EmbeddedTerminals()
     private(set) var favorites = Set(UserDefaults.standard.stringArray(forKey: Preferences.favorites) ?? [])
     var selectionRequest: String?
+    var closeRequest: String?
+    @ObservationIgnored var selectedID: String?
     private(set) var handoffs: [String: HandoffState] = [:]
 
     enum HandoffState: Equatable {
@@ -145,7 +147,8 @@ final class SessionStore {
     }
 
     func newChat(in directory: String, continueLast: Bool, prompt: String) {
-        var arguments = continueLast ? ["--continue"] : []
+        let previousIsRunning = sessions.contains { $0.isLive && $0.cwd == directory }
+        var arguments = continueLast && !previousIsRunning ? ["--continue"] : []
         let prompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         if !prompt.isEmpty { arguments += ["--", prompt] }
         if defaults.bool(forKey: Preferences.openInApp),
@@ -157,11 +160,35 @@ final class SessionStore {
     }
 
     private func adoptEmbeddedTerminal(tty: String?, sessionId: String) {
-        guard let tty, terminals.view(for: sessionId) == nil else { return }
-        for id in terminals.ids where terminals.isRunning(id) && terminals.tty(for: id) == tty {
-            terminals.adopt(pending: id, as: sessionId)
-            if selectionRequest == id || selectionRequest == nil { selectionRequest = sessionId }
+        guard let tty, tty != "??" else { return }
+        for id in terminals.ids where id != sessionId && terminals.isRunning(id) && terminals.tty(for: id) == tty {
+            if terminals.view(for: sessionId) == nil {
+                terminals.adopt(pending: id, as: sessionId)
+                if selectedID == id { selectionRequest = sessionId }
+            } else {
+                terminals.link(pending: id, to: sessionId)
+            }
         }
+    }
+
+    func requestClose(_ id: String) {
+        closeRequest = id
+    }
+
+    func close(_ id: String) {
+        if terminals.isRunning(id) {
+            terminals.close(id)
+        } else if let session = session(id), let tty = session.live?.tty,
+                  let pid = ProcessTree.agentProcess(on: tty, agent: session.agent) {
+            ProcessTree.terminate(pid)
+        }
+        if var info = live[id] {
+            info.ended = true
+            info.status = .idle
+            live[id] = info
+        }
+        Notifier.shared.clear(id)
+        refreshProcesses()
     }
 
     func handOff(_ id: String) {
@@ -323,6 +350,7 @@ final class SessionStore {
         let id = event.sessionId
         var info = live[id] ?? LiveInfo(updatedAt: .distantPast)
         info.merge(line)
+        if terminals.hasUnlinkedPending { adoptEmbeddedTerminal(tty: info.tty, sessionId: id) }
 
         var alert: String?
         switch event.hookEventName {

@@ -2,15 +2,23 @@
 
 ThreadHaven aims to be the place where you and your team run Claude Code: every chat in one view, and every token spent on purpose. The plan below is a direction, not a promise; items can move between versions.
 
-## 0.2 · Token Saver
+## 0.2 · Token Saver and terminal (released)
 
 Long chats are where most tokens go. Each turn re-reads the whole context, and coming back to a large chat after its prompt cache expired rebuilds all of it.
 
-- Token insights for every chat: context per turn, cold cache rebuilds and the heaviest tool outputs
-- Compaction triggered by an absolute token threshold instead of a share of the context window
-- A warning before you continue a large chat whose prompt cache has gone cold
-- Handoff: a cheap model writes a note from the chat, and a fresh session starts from it instead of the full history
-- `threadhaven stats`: a command that measures all of the above on your own transcripts, so every number we publish can be reproduced
+- ~~Token insights for every chat: context per turn, cold cache rebuilds and the heaviest tool outputs~~ (done)
+- ~~Compaction triggered by an absolute token threshold instead of a share of the context window~~ (done)
+- ~~A warning before you continue a large chat whose prompt cache has gone cold~~ (done)
+- ~~Handoff: a cheap model writes a note from the chat, and a fresh session starts from it instead of the full history~~ (done)
+- ~~`threadhaven stats`: a command that measures all of the above on your own transcripts~~ (done)
+- ~~A real terminal inside the app, so chats run in ThreadHaven instead of being steered through Terminal~~ (done)
+- ~~Favorites, private mode and closing chats from the list~~ (done)
+
+## Next · Chats
+
+- Split view with two chats side by side
+- Restore open chats after ThreadHaven restarts
+- Dictation and prompt polishing straight into the embedded terminal
 
 ## 0.3 · Workspace
 
@@ -28,7 +36,7 @@ A first measurement shows that files on disk (CLAUDE.md, memory, skill descripti
 
 ## Platforms
 
-- **Core library.** The transcript reader, hook handling and token insights move into a Foundation-only `ThreadHavenCore` package that builds on macOS and Linux.
+- ~~**Core library.** The transcript reader and token insights in a Foundation-only `ThreadHavenCore` package that builds on macOS and Linux~~ (done)
 - **Linux.** A native desktop app built on the core library (in preview: recent sessions, token usage and resuming)
 - **Phone companion over Tailscale** (in preview). A web app served by ThreadHaven inside your tailnet: chat status, notifications and sending prompts from iPhone or Android, from any network. See [the design](docs/design/remote-access.md).
 - **Self-hostable relay.** An open-source, end-to-end encrypted relay for teams without Tailscale.

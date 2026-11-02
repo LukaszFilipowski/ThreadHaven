@@ -19,10 +19,11 @@ struct ChatSidebar: View {
             if !layout.running.isEmpty || !pending.isEmpty {
                 Section(String(localized: "Running")) {
                     ForEach(pending) { item in
-                        PendingRow(item: item).tag(item.id)
+                        PendingRow(item: item, onClose: { store.requestClose(item.id) }).tag(item.id)
                     }
                     ForEach(Array(layout.running.enumerated()), id: \.element.id) { index, session in
-                        ChatRow(session: session, showProject: true, shortcut: index < 9 ? index + 1 : nil, favorite: store.isFavorite(session.id))
+                        ChatRow(session: session, showProject: true, shortcut: index < 9 ? index + 1 : nil,
+                                favorite: store.isFavorite(session.id), onClose: { store.requestClose(session.id) })
                             .tag(session.id)
                     }
                 }
@@ -83,21 +84,42 @@ struct ChatSidebar: View {
 }
 
 struct PendingRow: View {
+    @Environment(SessionStore.self) private var store
     let item: EmbeddedTerminals.Pending
+    var onClose: (() -> Void)?
+    @State private var hovering = false
 
     var body: some View {
+        let linked = item.linkedSession.flatMap(store.session)
         HStack(spacing: 10) {
-            ProgressView().controlSize(.small).frame(width: 16, height: 16)
+            Group {
+                if let linked {
+                    StatusIcon(status: linked.status == .closed ? .idle : linked.status)
+                } else {
+                    ProgressView().controlSize(.small)
+                }
+            }
+            .frame(width: 16, height: 16)
             VStack(alignment: .leading, spacing: 3) {
-                Text(String(localized: "New chat"))
+                Text(linked?.title ?? String(localized: "Starting…"))
                     .font(.callout.weight(.medium))
-                Label(item.project, systemImage: "folder")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                HStack(spacing: 5) {
+                    Label(item.project, systemImage: "folder")
+                    if linked != nil {
+                        Text(String(localized: "second window"))
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
+            if let onClose, hovering {
+                CloseChatButton(action: onClose)
+            }
         }
         .padding(.vertical, 4)
+        .onHover { hovering = $0 }
     }
 }
 
@@ -163,6 +185,8 @@ struct ChatRow: View {
     let showProject: Bool
     let shortcut: Int?
     var favorite = false
+    var onClose: (() -> Void)?
+    @State private var hovering = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -183,7 +207,9 @@ struct ChatRow: View {
                     if session.needsAttention {
                         Circle().fill(.orange).frame(width: 8, height: 8)
                     }
-                    if let shortcut {
+                    if let onClose, hovering {
+                        CloseChatButton(action: onClose)
+                    } else if let shortcut {
                         Text("⌘\(shortcut)")
                             .font(.caption2.monospaced())
                             .foregroundStyle(.secondary)
@@ -208,5 +234,19 @@ struct ChatRow: View {
             }
         }
         .padding(.vertical, 4)
+        .onHover { hovering = $0 }
+    }
+}
+
+struct CloseChatButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "xmark.circle.fill")
+                .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.borderless)
+        .help(String(localized: "Close this chat and stop everything it runs"))
     }
 }
