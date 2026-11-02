@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-02
+
 ### Added
 
 - Delete a finished chat from its context menu to keep the list clean; the conversation goes to the Trash, so it can be restored
