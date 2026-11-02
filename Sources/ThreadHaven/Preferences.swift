@@ -11,6 +11,8 @@ enum Preferences {
     static let polishModel = "polishModel"
     static let quickSwitcher = "quickSwitcher"
     static let openInApp = "openInApp"
+    static let favorites = "favorites"
+    static let expandedSections = "expandedSections"
     static let remoteEnabled = "remoteEnabled"
     static let remotePort = "remotePort"
     static let remoteIdleHours = "remoteIdleHours"
