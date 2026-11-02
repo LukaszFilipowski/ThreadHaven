@@ -8,11 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Close a running chat from the list with ✕ or the context menu; it stops Claude or Codex and everything the chat started, after a confirmation
+- Private mode: a toolbar switch that shows only running chats
 - Favorites: star a chat from its header or context menu and it gets its own section in the sidebar, labelled with its project
 
 ### Changed
 
+- README and roadmap describe the current app
 - All sidebar sections except Running start collapsed, and ThreadHaven remembers which ones you open
+
+### Fixed
+
+- A second terminal that continues an already open chat shows that chat's title and status instead of a spinning "New chat"
+- A new chat that continues the previous thread starts fresh when that thread is already open, so one conversation never runs twice
 
 ## [0.2.0] - 2026-11-01
 
