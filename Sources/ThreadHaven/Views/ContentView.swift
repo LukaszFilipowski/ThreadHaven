@@ -63,7 +63,7 @@ struct ContentView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .navigation) {
+            ToolbarItem(placement: .primaryAction) {
                 Toggle(isOn: $privateMode) {
                     Label(String(localized: "Private Mode"), systemImage: privateMode ? "eye.slash.fill" : "eye.slash")
                 }
@@ -127,7 +127,7 @@ struct ContentView: View {
         return String(localized: "Close “\(title)”?")
     }
 
-        private var selectionNeedsAttention: Bool {
+    private var selectionNeedsAttention: Bool {
         selection.flatMap { store.session($0)?.needsAttention } ?? false
     }
 

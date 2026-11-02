@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- The Private Mode switch sits with the other toolbar buttons on the right, so it is easy to find
+
 ## [0.2.1] - 2026-11-02
 
 ### Added
