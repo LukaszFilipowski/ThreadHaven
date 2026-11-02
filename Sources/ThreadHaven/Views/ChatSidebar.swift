@@ -6,10 +6,12 @@ struct ChatSidebar: View {
     @Binding var selection: String?
     let sessions: [Session]
     var pending: [EmbeddedTerminals.Pending] = []
-    @State private var toggled: Set<String> = []
+    @AppStorage(Preferences.expandedSections) private var expandedStorage = ""
+
+    private static let favoritesID = "favorites"
 
     var body: some View {
-        let layout = SidebarLayout(sessions: sessions)
+        let layout = SidebarLayout(sessions: sessions, favorites: store.favorites)
         List(selection: $selection) {
             if !store.hooksInstalled {
                 HooksBanner()
@@ -20,15 +22,24 @@ struct ChatSidebar: View {
                         PendingRow(item: item).tag(item.id)
                     }
                     ForEach(Array(layout.running.enumerated()), id: \.element.id) { index, session in
-                        ChatRow(session: session, showProject: true, shortcut: index < 9 ? index + 1 : nil)
+                        ChatRow(session: session, showProject: true, shortcut: index < 9 ? index + 1 : nil, favorite: store.isFavorite(session.id))
                             .tag(session.id)
                     }
                 }
             }
+            if !layout.favorites.isEmpty {
+                Section(isExpanded: expansion(for: Self.favoritesID)) {
+                    ForEach(layout.favorites) { session in
+                        ChatRow(session: session, showProject: true, shortcut: nil, favorite: true).tag(session.id)
+                    }
+                } header: {
+                    SidebarHeader(title: String(localized: "Favorites"), detail: nil, count: layout.favorites.count, symbol: "star.fill")
+                }
+            }
             ForEach(layout.projects) { project in
-                Section(isExpanded: expansion(for: project)) {
+                Section(isExpanded: expansion(for: project.id)) {
                     ForEach(project.sessions) { session in
-                        ChatRow(session: session, showProject: false, shortcut: nil).tag(session.id)
+                        ChatRow(session: session, showProject: false, shortcut: nil, favorite: false).tag(session.id)
                     }
                 } header: {
                     SidebarHeader(title: project.name, detail: project.displayPath, count: project.sessions.count)
@@ -50,12 +61,17 @@ struct ChatSidebar: View {
         }
     }
 
-    private func expansion(for project: SidebarLayout.Project) -> Binding<Bool> {
-        let recent = (project.sessions.first?.lastActivity ?? .distantPast) > Date().addingTimeInterval(-7 * 86_400)
-        return Binding(
-            get: { toggled.contains(project.id) ? !recent : recent || project.sessions.contains { $0.id == selection } },
-            set: { expanded in
-                if expanded == recent { toggled.remove(project.id) } else { toggled.insert(project.id) }
+    private var expanded: Set<String> {
+        Set(expandedStorage.split(separator: "\n").map(String.init))
+    }
+
+    private func expansion(for id: String) -> Binding<Bool> {
+        Binding(
+            get: { expanded.contains(id) },
+            set: { isExpanded in
+                var ids = expanded
+                if isExpanded { ids.insert(id) } else { ids.remove(id) }
+                expandedStorage = ids.sorted().joined(separator: "\n")
             }
         )
     }
@@ -98,27 +114,32 @@ struct SidebarLayout {
     }
 
     let running: [Session]
+    let favorites: [Session]
     let projects: [Project]
 
-    init(sessions: [Session]) {
+    init(sessions: [Session], favorites favoriteIDs: Set<String> = []) {
         running = sessions.filter(\.isLive).sorted { ($0.project, $0.id) < ($1.project, $1.id) }
-        let recent = sessions.filter { !$0.isLive }
+        favorites = sessions
+            .filter { !$0.isLive && favoriteIDs.contains($0.id) }
+            .sorted { $0.lastActivity > $1.lastActivity }
+        let recent = sessions.filter { !$0.isLive && !favoriteIDs.contains($0.id) }
         projects = Dictionary(grouping: recent, by: \.cwd)
             .map { Project(path: $0.key, sessions: $0.value.sorted { $0.lastActivity > $1.lastActivity }) }
             .sorted { ($0.sessions.first?.lastActivity ?? .distantPast) > ($1.sessions.first?.lastActivity ?? .distantPast) }
     }
 
-    var ordered: [Session] { running + projects.flatMap(\.sessions) }
+    var ordered: [Session] { running + favorites + projects.flatMap(\.sessions) }
 }
 
 struct SidebarHeader: View {
     let title: String
     let detail: String?
     let count: Int
+    var symbol = "folder.fill"
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: "folder.fill")
+            Image(systemName: symbol)
                 .foregroundStyle(.secondary)
             Text(title)
                 .lineLimit(1)
@@ -141,6 +162,7 @@ struct ChatRow: View {
     let session: Session
     let showProject: Bool
     let shortcut: Int?
+    var favorite = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -153,6 +175,11 @@ struct ChatRow: View {
                         .fontWeight(session.needsAttention ? .semibold : .medium)
                         .lineLimit(2)
                     Spacer(minLength: 4)
+                    if favorite {
+                        Image(systemName: "star.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.yellow)
+                    }
                     if session.needsAttention {
                         Circle().fill(.orange).frame(width: 8, height: 8)
                     }

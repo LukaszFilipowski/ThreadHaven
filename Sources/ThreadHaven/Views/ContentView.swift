@@ -145,6 +145,10 @@ struct SessionActions: View {
     let session: Session
 
     var body: some View {
+        Button(store.isFavorite(session.id) ? String(localized: "Remove from Favorites") : String(localized: "Add to Favorites")) {
+            store.toggleFavorite(session.id)
+        }
+        Divider()
         if session.isLive {
             Button(String(localized: "Go to Terminal")) { store.focus(session.id) }
             Button(String(localized: "Compact Now")) { store.compact(session.id) }

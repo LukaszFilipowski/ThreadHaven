@@ -86,6 +86,14 @@ struct SessionDetail: View {
         VStack(alignment: .leading, spacing: 10) {
             ProjectBar(session: session)
             HStack(alignment: .center, spacing: 12) {
+                Button {
+                    store.toggleFavorite(session.id)
+                } label: {
+                    Image(systemName: store.isFavorite(session.id) ? "star.fill" : "star")
+                        .foregroundStyle(store.isFavorite(session.id) ? Color.yellow : Color.secondary)
+                }
+                .buttonStyle(.plain)
+                .help(store.isFavorite(session.id) ? String(localized: "Remove from Favorites") : String(localized: "Add to Favorites"))
                 Text(session.title)
                     .font(.title3.weight(.semibold))
                     .lineLimit(2)

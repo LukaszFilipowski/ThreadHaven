@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Favorites: star a chat from its header or context menu and it gets its own section in the sidebar, labelled with its project
+
+### Changed
+
+- All sidebar sections except Running start collapsed, and ThreadHaven remembers which ones you open
+
 ## [0.2.0] - 2026-11-01
 
 ### Added

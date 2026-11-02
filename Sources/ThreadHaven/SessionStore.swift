@@ -12,6 +12,7 @@ final class SessionStore {
     private(set) var codexNotify = CodexNotifyInstaller.state
     private(set) var lastError: String?
     let terminals = EmbeddedTerminals()
+    private(set) var favorites = Set(UserDefaults.standard.stringArray(forKey: Preferences.favorites) ?? [])
     var selectionRequest: String?
     private(set) var handoffs: [String: HandoffState] = [:]
 
@@ -93,6 +94,13 @@ final class SessionStore {
         if !TerminalBridge.focus(session) {
             show(id)
         }
+    }
+
+    func isFavorite(_ id: String) -> Bool { favorites.contains(id) }
+
+    func toggleFavorite(_ id: String) {
+        if favorites.remove(id) == nil { favorites.insert(id) }
+        defaults.set(favorites.sorted(), forKey: Preferences.favorites)
     }
 
     func show(_ id: String) {
