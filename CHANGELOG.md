@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-02
+
 ### Added
 
 - Close a running chat from the list with ✕ or the context menu; it stops Claude or Codex and everything the chat started, after a confirmation
