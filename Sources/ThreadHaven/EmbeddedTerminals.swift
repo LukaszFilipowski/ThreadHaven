@@ -10,6 +10,7 @@ final class EmbeddedTerminals {
         let id: String
         let cwd: String
         let agent: Agent
+        var linkedSession: String?
         var project: String { (cwd as NSString).lastPathComponent }
     }
 
@@ -52,9 +53,25 @@ final class EmbeddedTerminals {
         return id
     }
 
+    @ObservationIgnored private var ttyCache: [String: String] = [:]
+
     func tty(for id: String) -> String? {
-        guard let pid = views[id]?.process.shellPid, pid > 0 else { return nil }
-        return ProcessScanner.tty(ofProcess: pid)
+        if let tty = ttyCache[id] { return tty }
+        guard let pid = processID(for: id), let tty = ProcessScanner.tty(ofProcess: pid) else { return nil }
+        ttyCache[id] = tty
+        return tty
+    }
+
+    func processID(for id: String) -> pid_t? {
+        guard running.contains(id), let pid = views[id]?.process.shellPid, pid > 0 else { return nil }
+        return pid
+    }
+
+    var hasUnlinkedPending: Bool { pending.contains { $0.linkedSession == nil } }
+
+    func link(pending id: String, to sessionId: String) {
+        guard let index = pending.firstIndex(where: { $0.id == id }), pending[index].linkedSession != sessionId else { return }
+        pending[index].linkedSession = sessionId
     }
 
     var ids: [String] { Array(views.keys) }
@@ -64,6 +81,7 @@ final class EmbeddedTerminals {
         views[sessionId] = view
         observers[sessionId] = observers.removeValue(forKey: id)
         if running.remove(id) != nil { running.insert(sessionId) }
+        ttyCache[sessionId] = ttyCache.removeValue(forKey: id)
         pending.removeAll { $0.id == id }
         let observer = ProcessObserver { [weak self] in
             MainActor.assumeIsolated { self?.ended(sessionId) }
@@ -83,12 +101,13 @@ final class EmbeddedTerminals {
     }
 
     func close(_ id: String) {
-        views[id]?.process.terminate()
+        if let pid = processID(for: id) { ProcessTree.terminate(pid) }
         ended(id)
     }
 
     private func ended(_ id: String) {
         running.remove(id)
+        ttyCache[id] = nil
         pending.removeAll { $0.id == id }
     }
 
