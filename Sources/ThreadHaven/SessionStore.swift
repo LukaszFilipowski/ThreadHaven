@@ -15,6 +15,7 @@ final class SessionStore {
     private(set) var favorites = Set(UserDefaults.standard.stringArray(forKey: Preferences.favorites) ?? [])
     var selectionRequest: String?
     var closeRequest: String?
+    var deleteRequest: String?
     @ObservationIgnored var selectedID: String?
     private(set) var handoffs: [String: HandoffState] = [:]
 
@@ -189,6 +190,38 @@ final class SessionStore {
         }
         Notifier.shared.clear(id)
         refreshProcesses()
+    }
+
+    func requestDelete(_ id: String) {
+        deleteRequest = id
+    }
+
+    func canDelete(_ id: String) -> Bool {
+        guard let session = session(id) else { return false }
+        return !session.isLive && !terminals.isRunning(id) && session.meta != nil
+    }
+
+    func delete(_ id: String) {
+        guard canDelete(id), let meta = metas[id] else { return }
+        let transcript = URL(fileURLWithPath: meta.path)
+        let sidecar = transcript.deletingPathExtension()
+        do {
+            try FileManager.default.trashItem(at: transcript, resultingItemURL: nil)
+            if meta.agent == .claude, FileManager.default.fileExists(atPath: sidecar.path) {
+                try? FileManager.default.trashItem(at: sidecar, resultingItemURL: nil)
+            }
+            lastError = nil
+        } catch {
+            lastError = error.localizedDescription
+            return
+        }
+        stamps[transcript] = nil
+        metas[id] = nil
+        live[id] = nil
+        if favorites.remove(id) != nil {
+            defaults.set(favorites.sorted(), forKey: Preferences.favorites)
+        }
+        Notifier.shared.clear(id)
     }
 
     func handOff(_ id: String) {

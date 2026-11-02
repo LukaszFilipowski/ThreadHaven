@@ -109,6 +109,21 @@ struct ContentView: View {
         } message: {
             Text("This stops Claude or Codex in this chat and everything it started, such as running commands and MCP servers. The conversation stays in the list and can be resumed.")
         }
+        .confirmationDialog(
+            deleteTitle,
+            isPresented: Binding(get: { store.deleteRequest != nil }, set: { if !$0 { store.deleteRequest = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button(String(localized: "Move to Trash"), role: .destructive) {
+                if let id = store.deleteRequest {
+                    if selection == id { selection = nil }
+                    store.delete(id)
+                }
+                store.deleteRequest = nil
+            }
+        } message: {
+            Text("The conversation is moved to the Trash and disappears from ThreadHaven. You can put it back from the Trash.")
+        }
         .onChange(of: store.selectionRequest) { _, request in
             guard let request else { return }
             selection = request
@@ -125,6 +140,11 @@ struct ContentView: View {
     private var closeTitle: String {
         let title = store.closeRequest.flatMap { store.session($0)?.title } ?? String(localized: "this chat")
         return String(localized: "Close “\(title)”?")
+    }
+
+    private var deleteTitle: String {
+        let title = store.deleteRequest.flatMap { store.session($0)?.title } ?? String(localized: "this chat")
+        return String(localized: "Delete “\(title)”?")
     }
 
     private var selectionNeedsAttention: Bool {
@@ -193,6 +213,10 @@ struct SessionActions: View {
         if session.isLive || store.terminals.isRunning(session.id) {
             Divider()
             Button(String(localized: "Close Chat…"), role: .destructive) { store.requestClose(session.id) }
+        }
+        if store.canDelete(session.id) {
+            Divider()
+            Button(String(localized: "Delete Chat…"), role: .destructive) { store.requestDelete(session.id) }
         }
         Divider()
         Button(String(localized: "Show in Finder")) {
