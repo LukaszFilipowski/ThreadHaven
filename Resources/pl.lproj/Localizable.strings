@@ -267,3 +267,7 @@
 "This stops Claude or Codex in this chat and everything it started, such as running commands and MCP servers. The conversation stays in the list and can be resumed." = "To zatrzyma Claude lub Codexa w tym czacie i wszystko, co uruchomił, np. działające komendy i serwery MCP. Rozmowa zostaje na liście i można ją wznowić.";
 "this chat" = "ten czat";
 "Close “%@”?" = "Zamknąć „%@”?";
+"Delete Chat…" = "Usuń czat…";
+"Delete “%@”?" = "Usunąć „%@”?";
+"Move to Trash" = "Przenieś do Kosza";
+"The conversation is moved to the Trash and disappears from ThreadHaven. You can put it back from the Trash." = "Rozmowa trafi do Kosza i zniknie z ThreadHaven. Możesz ją przywrócić z Kosza.";

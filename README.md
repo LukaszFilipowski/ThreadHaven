@@ -28,6 +28,7 @@ Measure your own usage with `make stats`. The report is computed locally from `~
 - **A real terminal in the app.** Open any chat and keep working with Claude Code or Codex exactly as in Terminal: slash commands, approvals and shortcuts included. Chats keep running while you switch between them, and the History tab shows the conversation as readable messages.
 - **One list, grouped by project.** Running chats stay on top in a fixed order, the rest are grouped by project with counts and collapsible sections. Star a chat to keep it under Favorites, search by title, folder, branch or last prompt.
 - **Close a chat in one click.** The ✕ next to a running chat stops Claude or Codex and everything it started, such as running commands and MCP servers. The conversation stays in the list and can be resumed.
+- **Keep the history clean.** Delete a finished chat from its context menu. The conversation goes to the Trash, so you can put it back.
 - **Private mode.** One toolbar switch hides everything but the chats that are running right now, handy when you share your screen.
 - **New chat in a folder.** <kbd>⌘N</kbd> starts a chat in any recent folder, continuing the previous thread when it is not already open.
 - **Quick switcher.** Press <kbd>⌃⌥Space</kbd> anywhere to search your chats and jump to one; <kbd>⌘1</kbd>–<kbd>⌘9</kbd> switch between running chats in the window.
