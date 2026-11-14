@@ -34,4 +34,16 @@ struct SidebarLayoutTests {
     @Test func paneGridColumns() {
         #expect((1...6).map(PaneGrid.columns) == [1, 2, 3, 2, 3, 3])
     }
+
+    @Test func layoutKeepsShownChatsAndFillsWithRunningOnes() {
+        #expect(PaneGrid.panes(count: 3, keeping: ["b"], running: ["a", "b", "c", "d"]) == ["b", "a", "c"])
+        #expect(PaneGrid.panes(count: 1, keeping: ["b", "a"], running: ["a"]) == ["b"])
+        #expect(PaneGrid.panes(count: 6, keeping: [], running: ["a", "b"]) == ["a", "b"])
+    }
+
+    @Test func resumeCommandStartsInTheChatFolder() {
+        let meta = TranscriptMeta(sessionId: "abc", path: "/tmp/abc.jsonl", cwd: "/Users/me/my app", title: "t", modified: Date(), size: 1)
+        let session = Session(id: "abc", meta: meta, live: nil)
+        #expect(session.resumeCommand == "cd '/Users/me/my app' && claude '--resume' 'abc'")
+    }
 }

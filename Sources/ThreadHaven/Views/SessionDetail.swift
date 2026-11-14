@@ -105,7 +105,7 @@ struct SessionDetail: View {
                     .onTapGesture(count: 2) { store.requestRename(session.id) }
                     .help(String(localized: "Double-click to rename"))
                     .frame(minWidth: 80, alignment: .leading)
-                SessionIDButton(id: session.id)
+                SessionIDButton(session: session)
                 Spacer(minLength: 8)
                 Picker("", selection: $pane) {
                     Label(String(localized: "Terminal"), systemImage: "terminal").tag(Pane.terminal)
@@ -182,18 +182,20 @@ struct SessionDetail: View {
                 .help(String(localized: "Take over: stop this chat in the other terminal and continue it here"))
             }
             if session.isLive {
-                Button {
-                    store.focus(session.id)
-                } label: {
-                    Label(String(localized: "Terminal"), systemImage: "terminal")
+                if session.runsOutside {
+                    Button {
+                        store.focus(session.id)
+                    } label: {
+                        Label(String(localized: "Terminal"), systemImage: "terminal")
+                    }
+                    .help(String(localized: "Go to Terminal"))
                 }
-                .help(String(localized: "Go to Terminal"))
                 Button {
                     store.compact(session.id)
                 } label: {
                     Label(String(localized: "Compact"), systemImage: "arrow.down.right.and.arrow.up.left")
                 }
-                .disabled(!TerminalBridge.canCompact(session))
+                .disabled(!store.canCompact(session.id))
                 .help(String(localized: "Sends /compact to this chat"))
             } else {
                 Button {
@@ -214,7 +216,7 @@ struct SessionDetail: View {
             .menuIndicator(.hidden)
             .fixedSize()
         }
-        .labelStyle(.iconOnly)
+        .labelStyle(.titleAndIcon)
         .controlSize(.small)
     }
 
@@ -593,7 +595,7 @@ struct ColdCacheBanner: View {
                 .frame(minWidth: 120, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
-            if TerminalBridge.canCompact(session) {
+            if store.canCompact(session.id) {
                 Button(String(localized: "Compact")) { store.compact(session.id) }
             }
             HandoffButton(session: session)

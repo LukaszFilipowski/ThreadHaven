@@ -156,8 +156,13 @@ final class SessionStore {
         return session(id).map(TerminalBridge.canSend) ?? false
     }
 
+    func canCompact(_ id: String) -> Bool {
+        guard let session = session(id), session.agent.canCompact else { return false }
+        return terminals.isRunning(id) || TerminalBridge.canCompact(session)
+    }
+
     func compact(_ id: String) {
-        guard let session = session(id), TerminalBridge.canCompact(session) else { return }
+        guard canCompact(id) else { return }
         if send("/compact", to: id) { lastCompact[id] = Date() }
     }
 
@@ -604,7 +609,7 @@ final class SessionStore {
     private func autoCompactIfNeeded(_ id: String) {
         guard defaults.bool(forKey: Preferences.autoCompact),
               let session = session(id), session.status == .finished,
-              TerminalBridge.canCompact(session),
+              canCompact(id),
               let tokens = session.meta?.contextTokens,
               tokens >= defaults.integer(forKey: Preferences.compactTokens),
               Date().timeIntervalSince(lastCompact[id] ?? .distantPast) > 600 else { return }

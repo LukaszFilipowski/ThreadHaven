@@ -130,6 +130,11 @@ struct Session: Identifiable, Sendable {
 
     var shortID: String { String(id.prefix(8)) }
 
+    var resumeCommand: String {
+        let resume = TerminalBridge.invocation(agent, agent.resumeArguments(id))
+        return cwd.isEmpty ? resume : "cd \(TerminalBridge.shellQuote(cwd)) && \(resume)"
+    }
+
     var terminalName: String {
         guard let bundle = terminalBundle else { return String(localized: "another terminal") }
         return TerminalApp(rawValue: bundle)?.name ?? (live?.term ?? String(localized: "another terminal"))

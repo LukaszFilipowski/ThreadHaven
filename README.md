@@ -25,14 +25,17 @@ Measure your own usage with `make stats`. The report is computed locally from `~
 
 **Chats**
 
-- **A real terminal in the app.** Open any chat and keep working with Claude Code or Codex exactly as in Terminal: slash commands, approvals and shortcuts included. Chats keep running while you switch between them, and the History tab shows the conversation as readable messages.
+- **A real terminal in the app.** Open any chat and keep working with Claude Code or Codex exactly as in Terminal: slash commands, approvals and shortcuts included. Claude Code runs in its flicker-free renderer, the mouse wheel scrolls the conversation and clicks land where you point; hold <kbd>⌥</kbd> to select text. Chats keep running while you switch between them, and the History tab shows the conversation as readable messages.
+- **Back where you left off.** Chats that were open in ThreadHaven reopen by themselves after a restart, in the same layout.
 - **One simple list.** Chats running in ThreadHaven and chats running in another terminal have their own sections, so you always see where each one lives. Below them come Favorites and your most recent chats, newest first, with their project and when you last worked in them (30 by default, change it in Settings). Search by title, folder, branch, last prompt or session ID.
-- **Chats side by side.** ⌘-click up to six chats, or start two to six fresh chats in one folder from New Chat, and they run next to each other. Every chat shows its session ID; click it to copy.
+- **Chats side by side.** Pick a layout from the toolbar to show one to six of your running chats next to each other, ⌘-click chats in the list, or start several fresh chats in one folder from New Chat. Drag the borders between chats to resize them.
+- **Session ID and resume command.** Every chat shows its session ID. Click it to copy a ready command such as `cd ~/project && claude --resume <id>`, to continue the chat in any terminal.
+- **Your own names.** Rename a chat from its context menu or by double-clicking its title. The name stays in ThreadHaven.
 - **Take over a chat from another terminal.** A chat that runs in Terminal or iTerm2 can move into ThreadHaven in one click: ThreadHaven stops it there, closes that window when nothing else runs in it, and resumes the same conversation in its own terminal.
 - **Close a chat in one click.** The ✕ next to a running chat stops Claude or Codex and everything it started, such as running commands and MCP servers. The conversation stays in the list and can be resumed.
 - **Keep the history clean.** Delete a finished chat from its context menu. The conversation goes to the Trash, so you can put it back.
 - **Private mode.** One toolbar switch hides everything but the chats that are running right now, handy when you share your screen.
-- **New chat in a folder.** <kbd>⌘N</kbd> starts a chat in any recent folder, continuing the previous thread when it is not already open.
+- **New chat in a folder.** <kbd>⌘N</kbd> starts a fresh chat in any recent folder, or continues the previous thread if you ask for it.
 - **Quick switcher.** Press <kbd>⌃⌥Space</kbd> anywhere to search your chats and jump to one; <kbd>⌘1</kbd>–<kbd>⌘9</kbd> switch between running chats in the window.
 - **Notifications.** A notification, a Dock badge and a Dock bounce when a chat finishes its turn or waits for your approval.
 - **Codex CLI.** Codex sessions show up next to Claude Code chats, with live status through the optional notify script.

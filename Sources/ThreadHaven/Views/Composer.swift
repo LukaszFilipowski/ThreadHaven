@@ -20,7 +20,7 @@ struct Composer: View {
     }
 
     private var mode: Mode {
-        if TerminalBridge.canSend(to: session) { return .terminal }
+        if store.canSend(to: session.id) { return .terminal }
         if !session.isLive && !session.cwd.isEmpty { return .resume }
         return .unavailable
     }

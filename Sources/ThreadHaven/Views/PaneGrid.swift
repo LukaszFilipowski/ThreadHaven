@@ -25,22 +25,23 @@ struct PaneGrid: View {
     var body: some View {
         let columns = Self.columns(for: ids.count)
         let rows = stride(from: 0, to: ids.count, by: columns).map { Array(ids[$0..<min($0 + columns, ids.count)]) }
-        VStack(spacing: 1) {
-            ForEach(rows.indices, id: \.self) { row in
-                HStack(spacing: 1) {
-                    ForEach(rows[row], id: \.self) { id in
+        VSplitView {
+            ForEach(rows, id: \.self) { row in
+                HSplitView {
+                    ForEach(row, id: \.self) { id in
                         CompactPane(id: id, single: false)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                    if rows[row].count < columns {
-                        ForEach(0..<(columns - rows[row].count), id: \.self) { _ in
-                            Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
+                            .frame(minWidth: 260, maxWidth: .infinity, minHeight: 160, maxHeight: .infinity)
                     }
                 }
+                .frame(minHeight: 160, maxHeight: .infinity)
             }
         }
-        .background(Color(nsColor: .separatorColor))
+    }
+
+    static func panes(count: Int, keeping current: [String], running: [String]) -> [String] {
+        var ids = current
+        for id in running where !ids.contains(id) { ids.append(id) }
+        return Array(ids.prefix(max(1, min(count, SessionStore.maxPanes))))
     }
 }
 
@@ -74,7 +75,7 @@ struct CompactPane: View {
                 Spacer(minLength: 4)
                 if let session {
                     if session.isLive { OriginBadge(session: session).font(.caption).labelStyle(.iconOnly) }
-                    SessionIDButton(id: session.id, compact: !single)
+                    SessionIDButton(session: session, compact: !single)
                     if store.canTakeOver(session.id) {
                         TakeOverButton { store.requestTakeOver(session.id) }
                     }
@@ -112,21 +113,21 @@ struct CompactPane: View {
 }
 
 struct SessionIDButton: View {
-    let id: String
+    let session: Session
     var compact = false
     @State private var copied = false
 
     var body: some View {
         Button {
             NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(id, forType: .string)
+            NSPasteboard.general.setString(session.resumeCommand, forType: .string)
             copied = true
             Task {
                 try? await Task.sleep(for: .seconds(1.5))
                 copied = false
             }
         } label: {
-            Label(copied ? String(localized: "Copied") : String(id.prefix(8)),
+            Label(copied ? String(localized: "Copied") : session.shortID,
                   systemImage: copied ? "checkmark" : "number")
                 .labelStyle(compact ? AnyLabelStyle(.iconOnly) : AnyLabelStyle(.titleAndIcon))
                 .font(.caption.monospaced())
@@ -136,8 +137,8 @@ struct SessionIDButton: View {
                 .background(.quaternary.opacity(0.7), in: Capsule())
         }
         .buttonStyle(.plain)
-        .help(String(localized: "Copy session ID \(id)"))
-        .accessibilityLabel(String(localized: "Copy session ID"))
+        .help(String(localized: "Copy the command that resumes this chat: \(session.resumeCommand)"))
+        .accessibilityLabel(String(localized: "Copy resume command"))
     }
 }
 
