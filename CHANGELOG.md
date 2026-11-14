@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Up to six chats side by side: ⌘-click chats in the list, or pick how many fresh chats to start in New Chat
+- Take over a chat that runs in Terminal or iTerm2: ThreadHaven stops it there, closes the window if nothing else runs in it, and continues the same conversation in its own terminal
+- Every chat shows its session ID in the header; click it to copy, and search finds chats by it
+- Running chats are split into "Running in ThreadHaven" and "Running outside ThreadHaven", and each row shows where it runs
+
+### Changed
+
+- The sidebar is a flat list of the most recent chats with the time of the last activity, instead of sections per folder; how many it shows is a setting
+- New Chat starts a fresh chat by default; continuing the previous thread is opt-in
+
+### Fixed
+
+- The embedded terminal no longer flickers: Claude Code starts in its flicker-free renderer (a setting, on by default) and the chat header keeps a fixed height while the terminal is shown
+- Two chats in the same folder no longer end up as the same session, and resuming a chat that is already open jumps to it instead of opening it twice
+- Chats started from ThreadHaven no longer inherit the session of a Claude Code that launched the app, which turned off transcript saving
+
 ## [0.2.3] - 2026-11-02
 
 ### Added

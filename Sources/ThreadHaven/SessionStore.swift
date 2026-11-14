@@ -13,10 +13,11 @@ final class SessionStore {
     private(set) var lastError: String?
     let terminals = EmbeddedTerminals()
     private(set) var favorites = Set(UserDefaults.standard.stringArray(forKey: Preferences.favorites) ?? [])
-    var selectionRequest: String?
+    var selection: Set<String> = []
     var closeRequest: String?
     var deleteRequest: String?
-    @ObservationIgnored var selectedID: String?
+    var takeOverRequest: String?
+    private(set) var takingOver: Set<String> = []
     private(set) var handoffs: [String: HandoffState] = [:]
 
     enum HandoffState: Equatable {
@@ -67,6 +68,7 @@ final class SessionStore {
         guard metas[id] != nil || live[id] != nil else { return nil }
         var session = Session(id: id, meta: metas[id], live: live[id])
         if let tty = session.live?.tty { session.processAlive = aliveTTYs[session.agent]?.contains(tty) ?? false }
+        session.inApp = terminals.hosts(id)
         return session
     }
 
@@ -107,9 +109,16 @@ final class SessionStore {
     }
 
     func show(_ id: String) {
-        selectionRequest = id
+        show([id])
+    }
+
+    func show(_ ids: [String]) {
+        guard !ids.isEmpty else { return }
+        selection = Set(ids)
         NSApp.activate(ignoringOtherApps: true)
     }
+
+    static let maxPanes = 6
 
     @discardableResult
     func send(_ text: String, to id: String) -> Bool {
@@ -138,7 +147,11 @@ final class SessionStore {
         var arguments = session.agent.resumeArguments(id)
         if !prompt.isEmpty { arguments += ["--", prompt] }
         markSeen(id)
-        if defaults.bool(forKey: Preferences.openInApp), !session.isLive {
+        if session.isLive || terminals.isRunning(id) {
+            focus(id)
+            return
+        }
+        if defaults.bool(forKey: Preferences.openInApp) {
             if terminals.open(id: id, cwd: session.cwd, agent: session.agent, arguments: arguments) {
                 show(id)
                 return
@@ -147,17 +160,79 @@ final class SessionStore {
         TerminalBridge.openNew(cwd: session.cwd, agent: session.agent, arguments: arguments, terminal: Preferences.terminal)
     }
 
-    func newChat(in directory: String, continueLast: Bool, prompt: String) {
+    func newChat(in directory: String, continueLast: Bool, prompt: String, count: Int = 1) {
+        let count = min(max(count, 1), Self.maxPanes)
         let previousIsRunning = sessions.contains { $0.isLive && $0.cwd == directory }
-        var arguments = continueLast && !previousIsRunning ? ["--continue"] : []
-        let prompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !prompt.isEmpty { arguments += ["--", prompt] }
-        if defaults.bool(forKey: Preferences.openInApp),
-           let id = terminals.startNew(cwd: directory, agent: .claude, arguments: arguments) {
-            show(id)
-            return
+            || terminals.runningCwds().contains(directory)
+        var opened: [String] = []
+        for index in 0..<count {
+            var arguments = index == 0 && continueLast && !previousIsRunning ? ["--continue"] : []
+            let prompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !prompt.isEmpty { arguments += ["--", prompt] }
+            if defaults.bool(forKey: Preferences.openInApp),
+               let id = terminals.startNew(cwd: directory, agent: .claude, arguments: arguments) {
+                opened.append(id)
+            } else {
+                TerminalBridge.openNew(cwd: directory, arguments: arguments, terminal: Preferences.terminal)
+            }
         }
-        TerminalBridge.openNew(cwd: directory, arguments: arguments, terminal: Preferences.terminal)
+        show(opened)
+    }
+
+    func openSideBySide(_ ids: [String]) {
+        let ids = Array(ids.prefix(Self.maxPanes))
+        for id in ids {
+            guard let session = session(id), !session.isLive, !terminals.isRunning(id), !session.cwd.isEmpty else { continue }
+            terminals.open(id: id, cwd: session.cwd, agent: session.agent, arguments: session.agent.resumeArguments(id))
+        }
+        show(ids)
+    }
+
+    func canTakeOver(_ id: String) -> Bool {
+        guard let session = session(id), session.runsOutside, !session.cwd.isEmpty,
+              defaults.bool(forKey: Preferences.openInApp) else { return false }
+        return !takingOver.contains(id)
+    }
+
+    func requestTakeOver(_ id: String) {
+        takeOverRequest = id
+    }
+
+    func takeOver(_ id: String) {
+        guard canTakeOver(id), let session = session(id), let tty = session.live?.tty else { return }
+        takingOver.insert(id)
+        show(id)
+        let agent = session.agent
+        let bundle = session.terminalBundle
+        Task {
+            let stopped = await Task.detached(priority: .userInitiated) { () -> Bool in
+                guard let pid = ProcessTree.agentProcess(on: tty, agent: agent) else { return true }
+                ProcessTree.terminate(pid)
+                for _ in 0..<50 {
+                    if kill(pid, 0) != 0 {
+                        usleep(300_000)
+                        return true
+                    }
+                    usleep(100_000)
+                }
+                return false
+            }.value
+            takingOver.remove(id)
+            guard stopped else {
+                lastError = String(localized: "Could not stop the chat in \(session.terminalName).")
+                return
+            }
+            if let bundle { TerminalBridge.closeTab(tty: tty, bundle: bundle) }
+            if var info = live[id] {
+                info.ended = true
+                info.status = .idle
+                live[id] = info
+            }
+            refreshProcesses()
+            if terminals.open(id: id, cwd: session.cwd, agent: agent, arguments: agent.resumeArguments(id)) {
+                show(id)
+            }
+        }
     }
 
     private func adoptEmbeddedTerminal(tty: String?, sessionId: String) {
@@ -165,7 +240,7 @@ final class SessionStore {
         for id in terminals.ids where id != sessionId && terminals.isRunning(id) && terminals.tty(for: id) == tty {
             if terminals.view(for: sessionId) == nil {
                 terminals.adopt(pending: id, as: sessionId)
-                if selectedID == id { selectionRequest = sessionId }
+                if selection.remove(id) != nil { selection.insert(sessionId) }
             } else {
                 terminals.link(pending: id, to: sessionId)
             }

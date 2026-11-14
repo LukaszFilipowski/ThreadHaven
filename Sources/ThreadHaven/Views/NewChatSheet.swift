@@ -6,7 +6,8 @@ struct NewChatSheet: View {
     let initialDirectory: String?
 
     @State private var directory = ""
-    @State private var continueLast = true
+    @State private var continueLast = false
+    @State private var count = 1
     @State private var prompt = ""
 
     var body: some View {
@@ -29,14 +30,28 @@ struct NewChatSheet: View {
                 }
             }
 
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Chats side by side").font(.headline)
+                Picker("", selection: $count) {
+                    ForEach(1...SessionStore.maxPanes, id: \.self) { Text("\($0)").tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 260)
+                Text("Each one is a separate, fresh chat in this folder. They open next to each other.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Toggle(isOn: $continueLast) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Continue the previous thread")
-                    Text("Runs claude --continue, so the most recent chat in this folder picks up where it left off.")
+                    Text("Runs claude --continue, so the most recent chat in this folder picks up where it left off. Leave it off to start a new, separate chat.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
+            .disabled(count > 1)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("First message (optional)").font(.headline)
@@ -54,7 +69,7 @@ struct NewChatSheet: View {
                 Button(String(localized: "Cancel"), role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
                 Button(String(localized: "Start")) {
-                    store.newChat(in: directory, continueLast: continueLast, prompt: prompt)
+                    store.newChat(in: directory, continueLast: continueLast && count == 1, prompt: prompt, count: count)
                     dismiss()
                 }
                 .keyboardShortcut(.defaultAction)

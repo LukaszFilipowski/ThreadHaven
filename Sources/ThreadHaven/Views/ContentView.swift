@@ -4,13 +4,10 @@ struct ContentView: View {
     @Environment(SessionStore.self) private var store
     @Environment(\.openWindow) private var openWindow
     @AppStorage(Preferences.showBackground) private var showBackground = false
-    @State private var selection: String?
     @AppStorage(Preferences.privateMode) private var privateMode = false
-
-    init(selection: String? = nil) {
-        _selection = State(initialValue: selection)
-    }
+    @AppStorage(Preferences.recentLimit) private var recentLimit = 30
     @State private var search = ""
+    @State private var paneOrder: [String] = []
     @State private var showNewChat = false
 
     private var filtered: [Session] {
@@ -18,47 +15,44 @@ struct ContentView: View {
         let q = search.trimmingCharacters(in: .whitespaces).lowercased()
         guard !q.isEmpty else { return all }
         return all.filter {
-            $0.title.lowercased().contains(q) || $0.cwd.lowercased().contains(q)
+            $0.title.lowercased().contains(q) || $0.cwd.lowercased().contains(q) || $0.id.lowercased().hasPrefix(q)
                 || ($0.meta?.lastPrompt?.lowercased().contains(q) ?? false)
                 || ($0.meta?.gitBranch?.lowercased().contains(q) ?? false)
         }
     }
 
+    private var selection: Set<String> { store.selection }
+
+    private var primary: String? {
+        selection.count == 1 ? selection.first : nil
+    }
+
     var body: some View {
+        @Bindable var store = store
         let sessions = filtered
         let liveSessions = SidebarLayout(sessions: sessions).running
+        let searching = !search.trimmingCharacters(in: .whitespaces).isEmpty
 
         NavigationSplitView {
-            ChatSidebar(selection: $selection, sessions: privateMode ? sessions.filter(\.isLive) : sessions, pending: store.terminals.pending)
+            ChatSidebar(selection: $store.selection, sessions: privateMode ? sessions.filter(\.isLive) : sessions,
+                        pending: store.terminals.pending, limit: searching ? nil : recentLimit)
                 .searchable(text: $search, placement: .sidebar, prompt: Text("Search chats"))
                 .navigationSplitViewColumnWidth(min: 280, ideal: 340, max: 480)
                 .background(shortcutButtons(liveSessions))
         } detail: {
-            if let id = selection, let s = store.session(id) {
+            if selection.count > 1 {
+                PaneGrid(ids: paneOrder.filter(selection.contains).prefix(SessionStore.maxPanes).map { $0 })
+            } else if let id = primary, let s = store.session(id) {
                 SessionDetail(session: s)
                     .id(id)
-            } else if let id = selection, let pending = store.terminals.pending.first(where: { $0.id == id }) {
-                VStack(spacing: 0) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "folder.fill").foregroundStyle(Color.accentColor)
-                        Text(pending.project).font(.headline)
-                        Text(pending.linkedSession.flatMap { store.session($0)?.title } ?? String(localized: "New chat"))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                        Spacer()
-                        CloseChatButton { store.requestClose(id) }
-                    }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 14)
-                    Divider()
-                    TerminalPane(id: id, session: nil)
-                }
-                .id(id)
+            } else if let id = primary, store.terminals.pending.contains(where: { $0.id == id }) {
+                CompactPane(id: id, single: true)
+                    .id(id)
             } else {
                 ContentUnavailableView(
                     String(localized: "Pick a chat"),
                     systemImage: "bubble.left.and.bubble.right",
-                    description: Text("Double-click a chat to jump to its terminal. ⌘1–⌘9 switch between running chats.")
+                    description: Text("Double-click a chat to jump to its terminal. ⌘-click up to six chats to see them side by side. ⌘1–⌘9 switch between running chats.")
                 )
             }
         }
@@ -87,15 +81,15 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $showNewChat) {
-            NewChatSheet(initialDirectory: selection.flatMap { store.session($0)?.cwd })
+            NewChatSheet(initialDirectory: primary.flatMap { store.session($0)?.cwd })
                 .environment(store)
         }
         .onReceive(NotificationCenter.default.publisher(for: .newChatRequested)) { _ in
             showNewChat = true
         }
-        .onChange(of: selection) { _, id in
-            store.selectedID = id
-            if let id { store.markSeen(id) }
+        .onChange(of: selection, initial: true) { _, ids in
+            ids.forEach(store.markSeen)
+            paneOrder = PaneGrid.order(paneOrder, selection: ids, pending: store.terminals.pending.map(\.id))
         }
         .confirmationDialog(
             closeTitle,
@@ -116,7 +110,7 @@ struct ContentView: View {
         ) {
             Button(String(localized: "Move to Trash"), role: .destructive) {
                 if let id = store.deleteRequest {
-                    if selection == id { selection = nil }
+                    store.selection.remove(id)
                     store.delete(id)
                 }
                 store.deleteRequest = nil
@@ -124,16 +118,25 @@ struct ContentView: View {
         } message: {
             Text("The conversation is moved to the Trash and disappears from ThreadHaven. You can put it back from the Trash.")
         }
-        .onChange(of: store.selectionRequest) { _, request in
-            guard let request else { return }
-            selection = request
-            store.selectionRequest = nil
+        .confirmationDialog(
+            takeOverTitle,
+            isPresented: Binding(get: { store.takeOverRequest != nil }, set: { if !$0 { store.takeOverRequest = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button(String(localized: "Take Over")) {
+                if let id = store.takeOverRequest { store.takeOver(id) }
+                store.takeOverRequest = nil
+            }
+        } message: {
+            Text("ThreadHaven stops the chat where it runs now, closes that terminal window if nothing else runs in it, and continues the same conversation here. Anything it is doing right now is interrupted.")
         }
         .onChange(of: sessions.isEmpty, initial: true) { _, empty in
-            if selection == nil, !empty { selection = SidebarLayout(sessions: sessions).ordered.first?.id }
+            if selection.isEmpty, !empty, let first = SidebarLayout(sessions: sessions).ordered.first?.id {
+                store.selection = [first]
+            }
         }
         .onChange(of: selectionNeedsAttention) { _, attention in
-            if attention, NSApp.isActive, let id = selection { store.markSeen(id) }
+            if attention, NSApp.isActive { selection.forEach(store.markSeen) }
         }
     }
 
@@ -147,15 +150,22 @@ struct ContentView: View {
         return String(localized: "Delete “\(title)”?")
     }
 
+    private var takeOverTitle: String {
+        let session = store.takeOverRequest.flatMap { store.session($0) }
+        let title = session?.title ?? String(localized: "this chat")
+        let place = session?.terminalName ?? String(localized: "another terminal")
+        return String(localized: "Move “\(title)” from \(place) to ThreadHaven?")
+    }
+
     private var selectionNeedsAttention: Bool {
-        selection.flatMap { store.session($0)?.needsAttention } ?? false
+        selection.contains { store.session($0)?.needsAttention ?? false }
     }
 
     private func shortcutButtons(_ live: [Session]) -> some View {
         ZStack {
             ForEach(Array(live.prefix(9).enumerated()), id: \.element.id) { index, s in
                 Button("") {
-                    selection = s.id
+                    store.selection = [s.id]
                     store.focus(s.id)
                 }
                 .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
@@ -197,6 +207,9 @@ struct SessionActions: View {
             store.toggleFavorite(session.id)
         }
         Divider()
+        if store.canTakeOver(session.id) {
+            Button(String(localized: "Take Over in ThreadHaven…")) { store.requestTakeOver(session.id) }
+        }
         if session.isLive {
             Button(String(localized: "Go to Terminal")) { store.focus(session.id) }
             Button(String(localized: "Compact Now")) { store.compact(session.id) }

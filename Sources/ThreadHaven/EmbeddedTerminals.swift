@@ -38,7 +38,7 @@ final class EmbeddedTerminals {
         view.startProcess(
             executable: "/bin/zsh",
             args: ["-l", "-c", "exec \"$0\" \"$@\"", executable] + arguments,
-            environment: Self.environment(),
+            environment: Self.environment(for: agent),
             execName: nil,
             currentDirectory: cwd
         )
@@ -65,6 +65,14 @@ final class EmbeddedTerminals {
     func processID(for id: String) -> pid_t? {
         guard running.contains(id), let pid = views[id]?.process.shellPid, pid > 0 else { return nil }
         return pid
+    }
+
+    func hosts(_ sessionId: String) -> Bool {
+        running.contains(sessionId) || pending.contains { $0.linkedSession == sessionId && running.contains($0.id) }
+    }
+
+    func runningCwds() -> Set<String> {
+        Set(pending.filter { running.contains($0.id) }.map(\.cwd))
     }
 
     var hasUnlinkedPending: Bool { pending.contains { $0.linkedSession == nil } }
@@ -128,8 +136,17 @@ final class EmbeddedTerminals {
         }
     }
 
-    private static func environment() -> [String] {
-        var env = ProcessInfo.processInfo.environment
+    static let inheritedSessionKeys: Set<String> = [
+        "CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_SESSION_ID",
+        "CLAUDE_CODE_SESSION_ATTENDED", "CLAUDE_CODE_BRIDGE_SESSION_ID", "CLAUDE_CODE_MESSAGING_SOCKET",
+        "CLAUDE_CODE_MESSAGING_TOKEN", "CLAUDE_CODE_EXECPATH", "CLAUDE_PID", "AI_AGENT",
+    ]
+
+    static func environment(for agent: Agent, base: [String: String] = ProcessInfo.processInfo.environment) -> [String] {
+        var env = base.filter { !inheritedSessionKeys.contains($0.key) }
+        if agent == .claude, UserDefaults.standard.bool(forKey: Preferences.flickerFree) {
+            env["CLAUDE_CODE_NO_FLICKER"] = "1"
+        }
         env["TERM"] = "xterm-256color"
         env["COLORTERM"] = "truecolor"
         env["TERM_PROGRAM"] = "ThreadHaven"

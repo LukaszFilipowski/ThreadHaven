@@ -20,10 +20,11 @@ struct SnapshotHarness {
             try rep.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: out).appendingPathComponent(name))
         }
         let live = store.sessions.first(where: \.isLive) ?? store.sessions.first
-        try await shoot(ContentView(selection: live?.id), "content.png", CGSize(width: 1400, height: 880))
+        store.selection = Set([live?.id].compactMap { $0 })
+        try await shoot(ContentView(), "content.png", CGSize(width: 1400, height: 880))
         if let live {
             try await shoot(SessionDetail(session: live), "detail.png", CGSize(width: 960, height: 880))
         }
-        try await shoot(ChatSidebar(selection: .constant(live?.id), sessions: store.sessions), "sidebar.png", CGSize(width: 360, height: 880))
+        try await shoot(ChatSidebar(selection: .constant(Set([live?.id].compactMap { $0 })), sessions: store.sessions), "sidebar.png", CGSize(width: 360, height: 880))
     }
 }

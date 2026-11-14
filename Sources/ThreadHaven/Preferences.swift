@@ -13,7 +13,8 @@ enum Preferences {
     static let openInApp = "openInApp"
     static let favorites = "favorites"
     static let privateMode = "privateMode"
-    static let expandedSections = "expandedSections"
+    static let recentLimit = "recentLimit"
+    static let flickerFree = "flickerFree"
     static let remoteEnabled = "remoteEnabled"
     static let remotePort = "remotePort"
     static let remoteIdleHours = "remoteIdleHours"
@@ -35,6 +36,8 @@ enum Preferences {
             polishModel: "haiku",
             quickSwitcher: true,
             openInApp: true,
+            recentLimit: 30,
+            flickerFree: true,
             remoteEnabled: false,
             remoteIdleHours: 8,
             remotePreviews: false,

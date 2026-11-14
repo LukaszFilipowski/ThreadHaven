@@ -9,6 +9,8 @@ struct SettingsView: View {
     @AppStorage(Preferences.showBackground) private var showBackground = false
     @AppStorage(Preferences.quickSwitcher) private var quickSwitcher = true
     @AppStorage(Preferences.openInApp) private var openInApp = true
+    @AppStorage(Preferences.recentLimit) private var recentLimit = 30
+    @AppStorage(Preferences.flickerFree) private var flickerFree = true
     @AppStorage(Preferences.notify) private var notify = true
     @AppStorage(Preferences.autoCompact) private var autoCompact = false
     @AppStorage(Preferences.compactTokens) private var compactTokens = 150_000
@@ -22,11 +24,23 @@ struct SettingsView: View {
         Form {
             Section(String(localized: "General")) {
                 Toggle(String(localized: "Open chats in ThreadHaven's terminal"), isOn: $openInApp)
+                Toggle(isOn: $flickerFree) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Flicker-free terminal")
+                        Text("Starts Claude Code in its full-screen renderer, which redraws without flashing. Applies to chats opened from now on.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .disabled(!openInApp)
                 Picker(String(localized: "External terminal"), selection: $terminal) {
                     ForEach(TerminalApp.allCases) { Text($0.name).tag($0.rawValue) }
                 }
                 Stepper(value: $daysBack, in: 1...90) {
                     Text("Show chats from the last \(daysBack) days")
+                }
+                Stepper(value: $recentLimit, in: 10...200, step: 10) {
+                    Text("Show the \(recentLimit) most recent chats in the sidebar")
                 }
                 Toggle(String(localized: "Show background sessions (claude -p, SDK)"), isOn: $showBackground)
                 Toggle(String(localized: "Quick switcher with ⌃⌥Space"), isOn: $quickSwitcher)

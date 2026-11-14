@@ -16,7 +16,8 @@ Long chats are where most tokens go. Each turn re-reads the whole context, and c
 
 ## Next · Chats
 
-- Split view with two chats side by side
+- ~~Chats side by side, up to six at once~~ (done)
+- ~~Taking over a chat that runs in another terminal~~ (done)
 - Restore open chats after ThreadHaven restarts
 - Dictation and prompt polishing straight into the embedded terminal
 
