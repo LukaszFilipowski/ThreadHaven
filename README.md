@@ -2,7 +2,7 @@
 
 A native macOS home for your Claude Code and Codex CLI chats.
 
-ThreadHaven lists every chat on your Mac grouped by project, shows which ones are working, waiting for your approval or done, and runs them in a real terminal right inside the app. Switch between chats without losing a running session, get a notification when one needs you, and keep an eye on how many tokens each chat burns. Your transcripts are only read, never changed.
+ThreadHaven lists every chat on your Mac, newest first, shows which ones are working, waiting for your approval or done, and runs them in a real terminal right inside the app. Switch between chats without losing a running session, get a notification when one needs you, and keep an eye on how many tokens each chat burns. Your transcripts are only read, never changed.
 
 ## Why it saves tokens
 
@@ -26,7 +26,9 @@ Measure your own usage with `make stats`. The report is computed locally from `~
 **Chats**
 
 - **A real terminal in the app.** Open any chat and keep working with Claude Code or Codex exactly as in Terminal: slash commands, approvals and shortcuts included. Chats keep running while you switch between them, and the History tab shows the conversation as readable messages.
-- **One list, grouped by project.** Running chats stay on top in a fixed order, the rest are grouped by project with counts and collapsible sections. Star a chat to keep it under Favorites, search by title, folder, branch or last prompt.
+- **One simple list.** Chats running in ThreadHaven and chats running in another terminal have their own sections, so you always see where each one lives. Below them come Favorites and your most recent chats, newest first, with their project and when you last worked in them (30 by default, change it in Settings). Search by title, folder, branch, last prompt or session ID.
+- **Chats side by side.** ⌘-click up to six chats, or start two to six fresh chats in one folder from New Chat, and they run next to each other. Every chat shows its session ID; click it to copy.
+- **Take over a chat from another terminal.** A chat that runs in Terminal or iTerm2 can move into ThreadHaven in one click: ThreadHaven stops it there, closes that window when nothing else runs in it, and resumes the same conversation in its own terminal.
 - **Close a chat in one click.** The ✕ next to a running chat stops Claude or Codex and everything it started, such as running commands and MCP servers. The conversation stays in the list and can be resumed.
 - **Keep the history clean.** Delete a finished chat from its context menu. The conversation goes to the Trash, so you can put it back.
 - **Private mode.** One toolbar switch hides everything but the chats that are running right now, handy when you share your screen.

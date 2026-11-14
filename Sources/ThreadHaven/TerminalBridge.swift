@@ -93,6 +93,53 @@ enum TerminalBridge {
     }
 
     @discardableResult
+    static func closeTab(tty: String, bundle: String) -> Bool {
+        guard let source = closeTabScript(tty: tty, bundle: bundle) else { return false }
+        return run(source)
+    }
+
+    static func closeTabScript(tty: String, bundle: String) -> String? {
+        guard !tty.isEmpty, tty.allSatisfy({ $0.isLetter || $0.isNumber }) else { return nil }
+        let dev = "/dev/" + tty
+        switch TerminalApp(rawValue: bundle) {
+        case .terminal:
+            return """
+            tell application id "\(bundle)"
+                repeat with w in windows
+                    repeat with t in tabs of w
+                        if tty of t is "\(dev)" then
+                            if busy of t then return false
+                            if (count of tabs of w) is not 1 then return false
+                            close w
+                            return true
+                        end if
+                    end repeat
+                end repeat
+            end tell
+            return false
+            """
+        case .iterm:
+            return """
+            tell application id "\(bundle)"
+                repeat with w in windows
+                    repeat with t in tabs of w
+                        repeat with s in sessions of t
+                            if tty of s is "\(dev)" then
+                                tell s to close
+                                return true
+                            end if
+                        end repeat
+                    end repeat
+                end repeat
+            end tell
+            return false
+            """
+        default:
+            return nil
+        }
+    }
+
+    @discardableResult
     static func send(_ text: String, to session: Session) -> Bool {
         guard canSend(to: session), let bundle = session.terminalBundle, let tty = session.live?.tty,
               let app = TerminalApp(rawValue: bundle) else { return false }

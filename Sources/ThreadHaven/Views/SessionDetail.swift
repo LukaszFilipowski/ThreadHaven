@@ -24,6 +24,11 @@ struct SessionDetail: View {
             Divider()
             if pane == .terminal {
                 TerminalPane(id: session.id, session: session)
+                    .overlay(alignment: .top) {
+                        notices
+                            .padding(.horizontal, 12)
+                            .padding(.top, 8)
+                    }
             } else {
                 history
             }
@@ -96,9 +101,10 @@ struct SessionDetail: View {
                 .help(store.isFavorite(session.id) ? String(localized: "Remove from Favorites") : String(localized: "Add to Favorites"))
                 Text(session.title)
                     .font(.title3.weight(.semibold))
-                    .lineLimit(2)
+                    .lineLimit(pane == .terminal ? 1 : 2)
                     .frame(minWidth: 80, alignment: .leading)
                     .textSelection(.enabled)
+                SessionIDButton(id: session.id)
                 Spacer(minLength: 8)
                 Picker("", selection: $pane) {
                     Label(String(localized: "Terminal"), systemImage: "terminal").tag(Pane.terminal)
@@ -109,20 +115,8 @@ struct SessionDetail: View {
                 .fixedSize()
                 StatusPill(session: session)
             }
-            if let msg = session.live?.message, session.status == .needsInput {
-                Label(msg, systemImage: "hand.raised.fill")
-                    .font(.callout)
-                    .padding(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
-            }
-            if session.isCacheCold(at: now), let meta = session.meta, meta.contextTokens >= Self.coldCacheWarningTokens {
-                ColdCacheBanner(session: session, tokens: meta.contextTokens)
-            }
-            if case .failed(let message) = store.handoffs[session.id] {
-                Label(message, systemImage: "exclamationmark.triangle.fill")
-                    .font(.callout)
-                    .foregroundStyle(.red)
+            if pane == .history {
+                notices
             }
             HStack(spacing: 12) {
                 if let meta = session.meta {
@@ -152,8 +146,40 @@ struct SessionDetail: View {
     }
 
     @ViewBuilder
+    private var notices: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let msg = session.live?.message, session.status == .needsInput, pane == .history {
+                Label(msg, systemImage: "hand.raised.fill")
+                    .font(.callout)
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+            }
+            if session.isCacheCold(at: now), let meta = session.meta, meta.contextTokens >= Self.coldCacheWarningTokens {
+                ColdCacheBanner(session: session, tokens: meta.contextTokens)
+                    .background(pane == .terminal ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.clear), in: RoundedRectangle(cornerRadius: 8))
+            }
+            if case .failed(let message) = store.handoffs[session.id] {
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.callout)
+                    .foregroundStyle(.red)
+                    .padding(pane == .terminal ? 8 : 0)
+                    .background(pane == .terminal ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.clear), in: RoundedRectangle(cornerRadius: 8))
+            }
+        }
+    }
+
+    @ViewBuilder
     private var actions: some View {
         HStack(spacing: 4) {
+            if store.canTakeOver(session.id) {
+                Button {
+                    store.requestTakeOver(session.id)
+                } label: {
+                    Label(String(localized: "Take Over"), systemImage: "arrow.down.forward.square")
+                }
+                .help(String(localized: "Take over: stop this chat in the other terminal and continue it here"))
+            }
             if session.isLive {
                 Button {
                     store.focus(session.id)

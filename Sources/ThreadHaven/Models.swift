@@ -66,6 +66,7 @@ struct Session: Identifiable, Sendable {
     var meta: TranscriptMeta?
     var live: LiveInfo?
     var processAlive = false
+    var inApp = false
 
     var agent: Agent { meta?.agent ?? live?.agent ?? .claude }
 
@@ -122,6 +123,10 @@ struct Session: Identifiable, Sendable {
         guard let expires = cacheExpiresAt else { return false }
         return date > expires
     }
+
+    var runsOutside: Bool { isLive && !inApp }
+
+    var shortID: String { String(id.prefix(8)) }
 
     var terminalName: String {
         guard let bundle = terminalBundle else { return String(localized: "another terminal") }

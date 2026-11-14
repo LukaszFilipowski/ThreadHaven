@@ -55,13 +55,21 @@ struct TerminalPane: View {
                     .background(.bar)
                 }
             }
+        } else if let session, store.takingOver.contains(session.id) {
+            VStack(spacing: 12) {
+                ProgressView()
+                Text(String(localized: "Moving the chat here…")).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let session, session.isLive {
             PanePlaceholder(
                 symbol: "terminal",
                 title: String(localized: "Running in another terminal"),
-                message: String(localized: "This chat is open in \(session.terminalName). Quit it there to open it here, or jump to it."),
-                primary: (String(localized: "Go to Terminal"), { store.focus(session.id) }),
-                secondary: nil
+                message: String(localized: "This chat is open in \(session.terminalName). Take it over to stop it there and continue it here, or jump to it."),
+                primary: store.canTakeOver(session.id)
+                    ? (String(localized: "Take Over Here"), { store.requestTakeOver(session.id) })
+                    : (String(localized: "Go to Terminal"), { store.focus(session.id) }),
+                secondary: store.canTakeOver(session.id) ? (String(localized: "Go to Terminal"), { store.focus(session.id) }) : nil
             )
         } else if let session {
             PanePlaceholder(

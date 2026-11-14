@@ -3,33 +3,49 @@ import ThreadHavenCore
 
 struct ChatSidebar: View {
     @Environment(SessionStore.self) private var store
-    @Binding var selection: String?
+    @Binding var selection: Set<String>
     let sessions: [Session]
     var pending: [EmbeddedTerminals.Pending] = []
-    @AppStorage(Preferences.expandedSections) private var expandedStorage = ""
-
-    private static let favoritesID = "favorites"
+    var limit: Int? = 30
+    @State private var extra = 0
 
     var body: some View {
-        let layout = SidebarLayout(sessions: sessions, favorites: store.favorites)
+        let layout = SidebarLayout(sessions: sessions, favorites: store.favorites, limit: limit.map { $0 + extra })
         List(selection: $selection) {
             if !store.hooksInstalled {
                 HooksBanner()
             }
-            if !layout.running.isEmpty || !pending.isEmpty {
-                Section(String(localized: "Running")) {
+            if !layout.inApp.isEmpty || !pending.isEmpty {
+                Section {
                     ForEach(pending) { item in
                         PendingRow(item: item, onClose: { store.requestClose(item.id) }).tag(item.id)
                     }
-                    ForEach(Array(layout.running.enumerated()), id: \.element.id) { index, session in
+                    ForEach(Array(layout.inApp.enumerated()), id: \.element.id) { index, session in
                         ChatRow(session: session, showProject: true, shortcut: index < 9 ? index + 1 : nil,
                                 favorite: store.isFavorite(session.id), onClose: { store.requestClose(session.id) })
                             .tag(session.id)
                     }
+                } header: {
+                    SidebarHeader(title: String(localized: "Running in ThreadHaven"), detail: nil,
+                                  count: layout.inApp.count + pending.count, symbol: "macwindow")
+                }
+            }
+            if !layout.outside.isEmpty {
+                Section {
+                    ForEach(Array(layout.outside.enumerated()), id: \.element.id) { index, session in
+                        let position = layout.inApp.count + index
+                        ChatRow(session: session, showProject: true, shortcut: position < 9 ? position + 1 : nil,
+                                favorite: store.isFavorite(session.id), onClose: { store.requestClose(session.id) },
+                                onTakeOver: store.canTakeOver(session.id) ? { store.requestTakeOver(session.id) } : nil)
+                            .tag(session.id)
+                    }
+                } header: {
+                    SidebarHeader(title: String(localized: "Running outside ThreadHaven"), detail: nil,
+                                  count: layout.outside.count, symbol: "terminal")
                 }
             }
             if !layout.favorites.isEmpty {
-                Section(isExpanded: expansion(for: Self.favoritesID)) {
+                Section {
                     ForEach(layout.favorites) { session in
                         ChatRow(session: session, showProject: true, shortcut: nil, favorite: true).tag(session.id)
                     }
@@ -37,23 +53,35 @@ struct ChatSidebar: View {
                     SidebarHeader(title: String(localized: "Favorites"), detail: nil, count: layout.favorites.count, symbol: "star.fill")
                 }
             }
-            ForEach(layout.projects) { project in
-                Section(isExpanded: expansion(for: project.id)) {
-                    ForEach(project.sessions) { session in
-                        ChatRow(session: session, showProject: false, shortcut: nil, favorite: false).tag(session.id)
+            if !layout.recent.isEmpty {
+                Section {
+                    ForEach(layout.recent) { session in
+                        ChatRow(session: session, showProject: true, shortcut: nil, favorite: false).tag(session.id)
+                    }
+                    if layout.hidden > 0 {
+                        Button(String(localized: "Show \(min(layout.hidden, 30)) more")) { extra += 30 }
+                            .buttonStyle(.link)
+                            .selectionDisabled()
                     }
                 } header: {
-                    SidebarHeader(title: project.name, detail: project.displayPath, count: project.sessions.count)
+                    SidebarHeader(title: String(localized: "Recent"), detail: nil, count: layout.recent.count + layout.hidden, symbol: "clock")
                 }
             }
         }
         .listStyle(.sidebar)
         .contextMenu(forSelectionType: String.self) { ids in
-            if let id = ids.first, let session = store.session(id) {
+            if ids.count > 1 {
+                Button(String(localized: "Open Side by Side")) { store.openSideBySide(order(ids)) }
+                    .disabled(ids.count > SessionStore.maxPanes)
+            } else if let id = ids.first, let session = store.session(id) {
                 SessionActions(session: session)
             }
         } primaryAction: { ids in
-            if let id = ids.first { open(id) }
+            if ids.count > 1 {
+                store.openSideBySide(order(ids))
+            } else if let id = ids.first {
+                open(id)
+            }
         }
         .overlay {
             if sessions.isEmpty && pending.isEmpty {
@@ -62,19 +90,9 @@ struct ChatSidebar: View {
         }
     }
 
-    private var expanded: Set<String> {
-        Set(expandedStorage.split(separator: "\n").map(String.init))
-    }
-
-    private func expansion(for id: String) -> Binding<Bool> {
-        Binding(
-            get: { expanded.contains(id) },
-            set: { isExpanded in
-                var ids = expanded
-                if isExpanded { ids.insert(id) } else { ids.remove(id) }
-                expandedStorage = ids.sorted().joined(separator: "\n")
-            }
-        )
+    private func order(_ ids: Set<String>) -> [String] {
+        let ordered = SidebarLayout(sessions: sessions, favorites: store.favorites).ordered.map(\.id)
+        return ordered.filter(ids.contains)
     }
 
     private func open(_ id: String) {
@@ -124,33 +142,30 @@ struct PendingRow: View {
 }
 
 struct SidebarLayout {
-    struct Project: Identifiable {
-        let path: String
-        let sessions: [Session]
-        var id: String { path }
-        var name: String { path.isEmpty ? String(localized: "Unknown") : (path as NSString).lastPathComponent }
-        var displayPath: String {
-            let home = FileManager.default.homeDirectoryForCurrentUser.path
-            return path.hasPrefix(home) ? "~" + path.dropFirst(home.count) : path
-        }
-    }
-
-    let running: [Session]
+    let inApp: [Session]
+    let outside: [Session]
     let favorites: [Session]
-    let projects: [Project]
+    let recent: [Session]
+    let hidden: Int
 
-    init(sessions: [Session], favorites favoriteIDs: Set<String> = []) {
-        running = sessions.filter(\.isLive).sorted { ($0.project, $0.id) < ($1.project, $1.id) }
+    init(sessions: [Session], favorites favoriteIDs: Set<String> = [], limit: Int? = nil) {
+        let running = sessions.filter(\.isLive).sorted { ($0.project, $0.id) < ($1.project, $1.id) }
+        inApp = running.filter(\.inApp)
+        outside = running.filter { !$0.inApp }
         favorites = sessions
             .filter { !$0.isLive && favoriteIDs.contains($0.id) }
             .sorted { $0.lastActivity > $1.lastActivity }
-        let recent = sessions.filter { !$0.isLive && !favoriteIDs.contains($0.id) }
-        projects = Dictionary(grouping: recent, by: \.cwd)
-            .map { Project(path: $0.key, sessions: $0.value.sorted { $0.lastActivity > $1.lastActivity }) }
-            .sorted { ($0.sessions.first?.lastActivity ?? .distantPast) > ($1.sessions.first?.lastActivity ?? .distantPast) }
+        let all = sessions
+            .filter { !$0.isLive && !favoriteIDs.contains($0.id) }
+            .sorted { $0.lastActivity > $1.lastActivity }
+        let shown = limit.map { max(0, $0) } ?? all.count
+        recent = Array(all.prefix(shown))
+        hidden = all.count - recent.count
     }
 
-    var ordered: [Session] { running + favorites + projects.flatMap(\.sessions) }
+    var running: [Session] { inApp + outside }
+
+    var ordered: [Session] { running + favorites + recent }
 }
 
 struct SidebarHeader: View {
@@ -186,6 +201,7 @@ struct ChatRow: View {
     let shortcut: Int?
     var favorite = false
     var onClose: (() -> Void)?
+    var onTakeOver: (() -> Void)?
     @State private var hovering = false
 
     var body: some View {
@@ -207,8 +223,13 @@ struct ChatRow: View {
                     if session.needsAttention {
                         Circle().fill(.orange).frame(width: 8, height: 8)
                     }
-                    if let onClose, hovering {
-                        CloseChatButton(action: onClose)
+                    if hovering, onClose != nil || onTakeOver != nil {
+                        if let onTakeOver {
+                            TakeOverButton(action: onTakeOver)
+                        }
+                        if let onClose {
+                            CloseChatButton(action: onClose)
+                        }
                     } else if let shortcut {
                         Text("⌘\(shortcut)")
                             .font(.caption2.monospaced())
@@ -220,10 +241,14 @@ struct ChatRow: View {
                         Label(session.project, systemImage: "folder")
                             .fontWeight(.medium)
                     }
+                    if session.isLive {
+                        OriginBadge(session: session)
+                    }
                     if session.agent != .claude {
                         Text(session.agent.name)
                     }
                     Text(session.lastActivity, format: .relative(presentation: .named))
+                        .help(String(localized: "Last activity: \(session.lastActivity.formatted(date: .abbreviated, time: .shortened))"))
                     if session.meta != nil {
                         Text("· \(Int(session.contextFraction * 100))%")
                     }
@@ -248,5 +273,34 @@ struct CloseChatButton: View {
         }
         .buttonStyle(.borderless)
         .help(String(localized: "Close this chat and stop everything it runs"))
+    }
+}
+
+struct TakeOverButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "arrow.down.forward.square.fill")
+                .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.borderless)
+        .help(String(localized: "Take over: stop this chat in the other terminal and continue it here"))
+    }
+}
+
+struct OriginBadge: View {
+    let session: Session
+
+    var body: some View {
+        if session.inApp {
+            Label(String(localized: "in app"), systemImage: "macwindow")
+                .foregroundStyle(Color.accentColor)
+                .help(String(localized: "Runs in ThreadHaven's terminal"))
+        } else {
+            Label(session.terminalName, systemImage: "terminal")
+                .foregroundStyle(.orange)
+                .help(String(localized: "Runs outside ThreadHaven, in \(session.terminalName)"))
+        }
     }
 }
