@@ -297,3 +297,10 @@
 "Runs claude --continue, so the most recent chat in this folder picks up where it left off. Leave it off to start a new, separate chat." = "Uruchamia claude --continue, więc ostatni czat w tym folderze wróci do miejsca, w którym skończył. Zostaw wyłączone, aby zacząć nowy, osobny czat.";
 "Flicker-free terminal" = "Terminal bez migania";
 "Starts Claude Code in its full-screen renderer, which redraws without flashing. Applies to chats opened from now on." = "Uruchamia Claude Code w trybie pełnoekranowym, który odświeża ekran bez migania. Dotyczy czatów otwieranych od teraz.";
+"Rename Chat" = "Zmień nazwę czatu";
+"Rename…" = "Zmień nazwę…";
+"Rename" = "Zmień nazwę";
+"Name" = "Nazwa";
+"The name is only shown in ThreadHaven. Leave it empty to use the title from Claude again." = "Nazwa jest widoczna tylko w ThreadHaven. Zostaw puste pole, aby wrócić do tytułu z Claude.";
+"Double-click to rename" = "Kliknij dwukrotnie, aby zmienić nazwę";
+"Reopen chats that were open in ThreadHaven when it quit" = "Otwieraj ponownie czaty, które były otwarte w ThreadHaven przy zamknięciu";

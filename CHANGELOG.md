@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Chats that were open in ThreadHaven's terminal reopen by themselves after ThreadHaven restarts, in the same panes (a setting, on by default)
+- Rename a chat from its context menu or by double-clicking its title; the name is only stored in ThreadHaven
+
+### Fixed
+
+- Moving the mouse over the embedded terminal no longer makes Claude Code jump or open its menus: the terminal reported every move as a click and placed it on the wrong line. Moves are no longer sent, clicks land on the right line, the mouse wheel scrolls the conversation, and holding ⌥ selects text
+
 ## [0.2.4] - 2026-11-14
 
 ### Added

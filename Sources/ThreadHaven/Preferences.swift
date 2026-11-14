@@ -15,6 +15,10 @@ enum Preferences {
     static let privateMode = "privateMode"
     static let recentLimit = "recentLimit"
     static let flickerFree = "flickerFree"
+    static let reopenChats = "reopenChats"
+    static let openChats = "openChats"
+    static let openSelection = "openSelection"
+    static let customTitles = "customTitles"
     static let remoteEnabled = "remoteEnabled"
     static let remotePort = "remotePort"
     static let remoteIdleHours = "remoteIdleHours"
@@ -38,6 +42,7 @@ enum Preferences {
             openInApp: true,
             recentLimit: 30,
             flickerFree: true,
+            reopenChats: true,
             remoteEnabled: false,
             remoteIdleHours: 8,
             remotePreviews: false,

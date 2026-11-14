@@ -120,7 +120,8 @@ final class EmbeddedTerminals {
     }
 
     private static func makeView() -> LocalProcessTerminalView {
-        let view = LocalProcessTerminalView(frame: NSRect(x: 0, y: 0, width: 800, height: 500))
+        _ = ChatTerminalView.mouseHandling
+        let view = ChatTerminalView(frame: NSRect(x: 0, y: 0, width: 800, height: 500))
         view.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
         view.nativeBackgroundColor = .textBackgroundColor
         view.nativeForegroundColor = .textColor

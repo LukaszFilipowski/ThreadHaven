@@ -67,6 +67,7 @@ struct Session: Identifiable, Sendable {
     var live: LiveInfo?
     var processAlive = false
     var inApp = false
+    var customTitle: String?
 
     var agent: Agent { meta?.agent ?? live?.agent ?? .claude }
 
@@ -78,6 +79,7 @@ struct Session: Identifiable, Sendable {
     }
 
     var title: String {
+        if let t = customTitle, !t.isEmpty { return t }
         if let t = meta?.title, !t.isEmpty { return t }
         if let p = meta?.firstPrompt, !p.isEmpty { return String(p.prefix(80)) }
         return project

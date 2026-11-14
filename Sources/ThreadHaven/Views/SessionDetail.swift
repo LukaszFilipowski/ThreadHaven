@@ -102,8 +102,9 @@ struct SessionDetail: View {
                 Text(session.title)
                     .font(.title3.weight(.semibold))
                     .lineLimit(pane == .terminal ? 1 : 2)
+                    .onTapGesture(count: 2) { store.requestRename(session.id) }
+                    .help(String(localized: "Double-click to rename"))
                     .frame(minWidth: 80, alignment: .leading)
-                    .textSelection(.enabled)
                 SessionIDButton(id: session.id)
                 Spacer(minLength: 8)
                 Picker("", selection: $pane) {

@@ -17,6 +17,10 @@ final class SessionStore {
     var closeRequest: String?
     var deleteRequest: String?
     var takeOverRequest: String?
+    var renameRequest: String?
+    private(set) var customTitles = UserDefaults.standard.dictionary(forKey: Preferences.customTitles) as? [String: String] ?? [:]
+    @ObservationIgnored private var terminating = false
+    @ObservationIgnored private var savedOpenChats: [OpenChat] = []
     private(set) var takingOver: Set<String> = []
     private(set) var handoffs: [String: HandoffState] = [:]
 
@@ -50,7 +54,22 @@ final class SessionStore {
         refreshProcesses()
         rescan()
         every(1) { $0.readEvents(initial: false) }
-        every(4) { $0.refreshProcesses() }
+        every(4) {
+            $0.refreshProcesses()
+            $0.saveOpenChats()
+        }
+        NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.saveOpenChats()
+                self?.terminating = true
+            }
+        }
+        if Self.isApp, defaults.bool(forKey: Preferences.reopenChats) {
+            Task {
+                try? await Task.sleep(for: .seconds(1.5))
+                reopenChats()
+            }
+        }
         every(6) { $0.rescan() }
     }
 
@@ -69,6 +88,7 @@ final class SessionStore {
         var session = Session(id: id, meta: metas[id], live: live[id])
         if let tty = session.live?.tty { session.processAlive = aliveTTYs[session.agent]?.contains(tty) ?? false }
         session.inApp = terminals.hosts(id)
+        session.customTitle = customTitles[id]
         return session
     }
 
@@ -244,6 +264,60 @@ final class SessionStore {
             } else {
                 terminals.link(pending: id, to: sessionId)
             }
+        }
+    }
+
+    func requestRename(_ id: String) {
+        renameRequest = id
+    }
+
+    func rename(_ id: String, to title: String) {
+        let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        customTitles[id] = title.isEmpty ? nil : title
+        defaults.set(customTitles, forKey: Preferences.customTitles)
+    }
+
+    struct OpenChat: Codable, Equatable {
+        let id: String
+        let cwd: String
+        let agent: String
+    }
+
+    private static var isApp: Bool { Bundle.main.bundlePath.hasSuffix(".app") }
+
+    func openChatsSnapshot() -> [OpenChat] {
+        terminals.ids.sorted().compactMap { id in
+            guard terminals.isRunning(id), !id.hasPrefix("new-"), let session = session(id), !session.cwd.isEmpty else { return nil }
+            return OpenChat(id: id, cwd: session.cwd, agent: session.agent.rawValue)
+        }
+    }
+
+    private func saveOpenChats() {
+        guard Self.isApp, !terminating else { return }
+        let chats = openChatsSnapshot()
+        guard chats != savedOpenChats else { return }
+        savedOpenChats = chats
+        defaults.set(try? JSONEncoder().encode(chats), forKey: Preferences.openChats)
+        defaults.set(selection.filter { id in chats.contains { $0.id == id } }.sorted(), forKey: Preferences.openSelection)
+    }
+
+    private func reopenChats() {
+        guard let data = defaults.data(forKey: Preferences.openChats),
+              let chats = try? JSONDecoder().decode([OpenChat].self, from: data), !chats.isEmpty else { return }
+        var reopened: [String] = []
+        for chat in chats.prefix(12) {
+            guard let agent = Agent(rawValue: chat.agent), FileManager.default.fileExists(atPath: chat.cwd),
+                  session(chat.id)?.isLive != true, !terminals.isRunning(chat.id) else { continue }
+            if terminals.open(id: chat.id, cwd: chat.cwd, agent: agent, arguments: agent.resumeArguments(chat.id)) {
+                reopened.append(chat.id)
+            }
+        }
+        savedOpenChats = openChatsSnapshot()
+        let saved = Set(defaults.stringArray(forKey: Preferences.openSelection) ?? []).intersection(reopened)
+        if !saved.isEmpty {
+            selection = saved
+        } else if let first = reopened.first, selection.isEmpty {
+            selection = [first]
         }
     }
 
