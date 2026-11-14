@@ -25,6 +25,8 @@ struct SnapshotHarness {
         if let live {
             try await shoot(SessionDetail(session: live), "detail.png", CGSize(width: 960, height: 880))
         }
+        let recent = store.sessions.filter { !$0.isLive }.prefix(3).map(\.id)
+        try await shoot(PaneGrid(ids: Array(recent)), "panes.png", CGSize(width: 1100, height: 600))
         try await shoot(ChatSidebar(selection: .constant(Set([live?.id].compactMap { $0 })), sessions: store.sessions), "sidebar.png", CGSize(width: 360, height: 880))
     }
 }

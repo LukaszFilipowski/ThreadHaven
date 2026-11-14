@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Layout menu in the toolbar: show one to six running chats side by side at any time, not only when starting new ones
+- Drag the borders between chats shown side by side to resize them
+- Clicking a session ID copies the command that resumes the chat in a terminal (`cd <folder> && claude --resume <id>`); the plain ID is still in the context menu
+
+### Fixed
+
+- Compact, and sending a message from the History tab, work for chats that run in ThreadHaven's terminal; before, the button was greyed out and the message went nowhere
+- The chat header buttons show their names, and the Terminal button only appears for chats that run in another terminal, where it has something to jump to
+
 ## [0.2.5] - 2026-11-14
 
 ### Added

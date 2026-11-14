@@ -59,6 +59,20 @@ struct ContentView: View {
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
+                let available = Set(runningPaneIDs).union(selection).count
+                Menu {
+                    ForEach(1...SessionStore.maxPanes, id: \.self) { count in
+                        Toggle(isOn: Binding(get: { selection.count == count }, set: { _ in showPanes(count) })) {
+                            Text(count == 1 ? String(localized: "One chat") : String(localized: "\(count) chats side by side"))
+                        }
+                        .disabled(count > 1 && count > available)
+                    }
+                } label: {
+                    Label(String(localized: "Layout"), systemImage: layoutSymbol)
+                }
+                .help(String(localized: "How many running chats to show side by side. Drag the borders between them to resize."))
+            }
+            ToolbarItem(placement: .primaryAction) {
                 Toggle(isOn: $privateMode) {
                     Label(String(localized: "Private Mode"), systemImage: privateMode ? "eye.slash.fill" : "eye.slash")
                 }
@@ -168,6 +182,27 @@ struct ContentView: View {
         return String(localized: "Delete “\(title)”?")
     }
 
+    private var runningPaneIDs: [String] {
+        store.terminals.pending.filter { store.terminals.isRunning($0.id) }.map(\.id)
+            + SidebarLayout(sessions: store.sessions, favorites: store.favorites).running.map(\.id)
+    }
+
+    private var layoutSymbol: String {
+        switch selection.count {
+        case ...1: "rectangle"
+        case 2: "rectangle.split.2x1"
+        case 3: "rectangle.split.3x1"
+        default: "rectangle.split.2x2"
+        }
+    }
+
+    private func showPanes(_ count: Int) {
+        let ids = PaneGrid.panes(count: count, keeping: paneOrder.filter(selection.contains), running: runningPaneIDs)
+        guard !ids.isEmpty else { return }
+        paneOrder = ids
+        store.selection = Set(ids)
+    }
+
     private var takeOverTitle: String {
         let session = store.takeOverRequest.flatMap { store.session($0) }
         let title = session?.title ?? String(localized: "this chat")
@@ -232,7 +267,7 @@ struct SessionActions: View {
         if session.isLive {
             Button(String(localized: "Go to Terminal")) { store.focus(session.id) }
             Button(String(localized: "Compact Now")) { store.compact(session.id) }
-                .disabled(!TerminalBridge.canCompact(session))
+                .disabled(!store.canCompact(session.id))
         } else {
             Button(String(localized: "Resume in Terminal")) { store.resume(session.id) }
         }
@@ -253,6 +288,10 @@ struct SessionActions: View {
         Divider()
         Button(String(localized: "Show in Finder")) {
             NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: session.cwd)
+        }
+        Button(String(localized: "Copy Resume Command")) {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(session.resumeCommand, forType: .string)
         }
         Button(String(localized: "Copy Session ID")) {
             NSPasteboard.general.clearContents()

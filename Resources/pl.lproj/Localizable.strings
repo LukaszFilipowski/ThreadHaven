@@ -281,8 +281,6 @@
 "Double-click a chat to jump to its terminal. ⌘-click up to six chats to see them side by side. ⌘1–⌘9 switch between running chats." = "Kliknij dwukrotnie czat, aby przejść do jego terminala. Zaznacz z ⌘ do sześciu czatów, aby zobaczyć je obok siebie. ⌘1–⌘9 przełączają między działającymi czatami.";
 "Show only this chat" = "Pokaż tylko ten czat";
 "Copied" = "Skopiowano";
-"Copy session ID" = "Kopiuj ID sesji";
-"Copy session ID %@" = "Kopiuj ID sesji %@";
 "Take Over" = "Przejmij";
 "Take Over Here" = "Przejmij tutaj";
 "Take Over in ThreadHaven…" = "Przejmij w ThreadHaven…";
@@ -304,3 +302,10 @@
 "The name is only shown in ThreadHaven. Leave it empty to use the title from Claude again." = "Nazwa jest widoczna tylko w ThreadHaven. Zostaw puste pole, aby wrócić do tytułu z Claude.";
 "Double-click to rename" = "Kliknij dwukrotnie, aby zmienić nazwę";
 "Reopen chats that were open in ThreadHaven when it quit" = "Otwieraj ponownie czaty, które były otwarte w ThreadHaven przy zamknięciu";
+"Copy Resume Command" = "Kopiuj polecenie wznowienia";
+"Copy resume command" = "Kopiuj polecenie wznowienia";
+"Copy the command that resumes this chat: %@" = "Kopiuj polecenie, które wznawia ten czat: %@";
+"Layout" = "Układ";
+"One chat" = "Jeden czat";
+"%lld chats side by side" = "Obok siebie: %lld";
+"How many running chats to show side by side. Drag the borders between them to resize." = "Ile działających czatów pokazać obok siebie. Przeciągnij krawędzie między nimi, aby zmienić rozmiar.";
