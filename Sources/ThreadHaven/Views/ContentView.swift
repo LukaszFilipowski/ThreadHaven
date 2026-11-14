@@ -8,6 +8,7 @@ struct ContentView: View {
     @AppStorage(Preferences.recentLimit) private var recentLimit = 30
     @State private var search = ""
     @State private var paneOrder: [String] = []
+    @State private var renameText = ""
     @State private var showNewChat = false
 
     private var filtered: [Session] {
@@ -130,6 +131,23 @@ struct ContentView: View {
         } message: {
             Text("ThreadHaven stops the chat where it runs now, closes that terminal window if nothing else runs in it, and continues the same conversation here. Anything it is doing right now is interrupted.")
         }
+        .alert(
+            String(localized: "Rename Chat"),
+            isPresented: Binding(get: { store.renameRequest != nil }, set: { if !$0 { store.renameRequest = nil } })
+        ) {
+            TextField(String(localized: "Name"), text: $renameText)
+            Button(String(localized: "Rename")) {
+                if let id = store.renameRequest { store.rename(id, to: renameText) }
+                store.renameRequest = nil
+            }
+            .keyboardShortcut(.defaultAction)
+            Button(String(localized: "Cancel"), role: .cancel) { store.renameRequest = nil }
+        } message: {
+            Text("The name is only shown in ThreadHaven. Leave it empty to use the title from Claude again.")
+        }
+        .onChange(of: store.renameRequest) { _, id in
+            renameText = id.flatMap { store.customTitles[$0] ?? store.session($0)?.title } ?? ""
+        }
         .onChange(of: sessions.isEmpty, initial: true) { _, empty in
             if selection.isEmpty, !empty, let first = SidebarLayout(sessions: sessions).ordered.first?.id {
                 store.selection = [first]
@@ -206,6 +224,7 @@ struct SessionActions: View {
         Button(store.isFavorite(session.id) ? String(localized: "Remove from Favorites") : String(localized: "Add to Favorites")) {
             store.toggleFavorite(session.id)
         }
+        Button(String(localized: "Rename…")) { store.requestRename(session.id) }
         Divider()
         if store.canTakeOver(session.id) {
             Button(String(localized: "Take Over in ThreadHaven…")) { store.requestTakeOver(session.id) }

@@ -11,6 +11,7 @@ struct SettingsView: View {
     @AppStorage(Preferences.openInApp) private var openInApp = true
     @AppStorage(Preferences.recentLimit) private var recentLimit = 30
     @AppStorage(Preferences.flickerFree) private var flickerFree = true
+    @AppStorage(Preferences.reopenChats) private var reopenChats = true
     @AppStorage(Preferences.notify) private var notify = true
     @AppStorage(Preferences.autoCompact) private var autoCompact = false
     @AppStorage(Preferences.compactTokens) private var compactTokens = 150_000
@@ -33,6 +34,8 @@ struct SettingsView: View {
                     }
                 }
                 .disabled(!openInApp)
+                Toggle(String(localized: "Reopen chats that were open in ThreadHaven when it quit"), isOn: $reopenChats)
+                    .disabled(!openInApp)
                 Picker(String(localized: "External terminal"), selection: $terminal) {
                     ForEach(TerminalApp.allCases) { Text($0.name).tag($0.rawValue) }
                 }
