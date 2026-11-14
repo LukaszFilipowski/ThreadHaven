@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-11-14
+
 ### Added
 
 - Layout menu in the toolbar: show one to six running chats side by side at any time, not only when starting new ones
