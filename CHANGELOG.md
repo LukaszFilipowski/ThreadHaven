@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-11-14
+
 ### Added
 
 - Up to six chats side by side: ⌘-click chats in the list, or pick how many fresh chats to start in New Chat
