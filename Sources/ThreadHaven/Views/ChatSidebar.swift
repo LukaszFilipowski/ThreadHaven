@@ -8,9 +8,10 @@ struct ChatSidebar: View {
     var pending: [EmbeddedTerminals.Pending] = []
     var limit: Int? = 30
     @State private var extra = 0
+    @State private var recentQuery = ""
 
     var body: some View {
-        let layout = SidebarLayout(sessions: sessions, favorites: store.favorites, limit: limit.map { $0 + extra })
+        let layout = SidebarLayout(sessions: sessions, favorites: store.favorites, limit: limit.map { $0 + extra }, recentQuery: recentQuery)
         List(selection: $selection) {
             if !store.hooksInstalled {
                 HooksBanner()
@@ -53,8 +54,16 @@ struct ChatSidebar: View {
                     SidebarHeader(title: String(localized: "Favorites"), detail: nil, count: layout.favorites.count, symbol: "star.fill")
                 }
             }
-            if !layout.recent.isEmpty {
+            if layout.recentTotal > 0 {
                 Section {
+                    RecentSearchField(text: $recentQuery)
+                        .selectionDisabled()
+                    if layout.recent.isEmpty {
+                        Text(String(localized: "No old chats match"))
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .selectionDisabled()
+                    }
                     ForEach(layout.recent) { session in
                         ChatRow(session: session, showProject: true, shortcut: nil, favorite: false).tag(session.id)
                     }
@@ -64,7 +73,8 @@ struct ChatSidebar: View {
                             .selectionDisabled()
                     }
                 } header: {
-                    SidebarHeader(title: String(localized: "Recent"), detail: nil, count: layout.recent.count + layout.hidden, symbol: "clock")
+                    SidebarHeader(title: String(localized: "Recent"), detail: nil,
+                                  count: layout.recent.count + layout.hidden, symbol: "clock")
                 }
             }
         }
@@ -147,18 +157,23 @@ struct SidebarLayout {
     let favorites: [Session]
     let recent: [Session]
     let hidden: Int
+    /// Old chats before `recentQuery` narrows them, so the Recent section (and its search field) stays visible.
+    let recentTotal: Int
 
-    init(sessions: [Session], favorites favoriteIDs: Set<String> = [], limit: Int? = nil) {
+    init(sessions: [Session], favorites favoriteIDs: Set<String> = [], limit: Int? = nil, recentQuery: String = "") {
         let running = sessions.filter(\.isLive).sorted { ($0.project, $0.id) < ($1.project, $1.id) }
         inApp = running.filter(\.inApp)
         outside = running.filter { !$0.inApp }
         favorites = sessions
             .filter { !$0.isLive && favoriteIDs.contains($0.id) }
             .sorted { $0.lastActivity > $1.lastActivity }
-        let all = sessions
-            .filter { !$0.isLive && !favoriteIDs.contains($0.id) }
+        let old = sessions.filter { !$0.isLive && !favoriteIDs.contains($0.id) }
+        recentTotal = old.count
+        let searching = !recentQuery.trimmingCharacters(in: .whitespaces).isEmpty
+        let all = old
+            .filter { $0.matches(recentQuery) }
             .sorted { $0.lastActivity > $1.lastActivity }
-        let shown = limit.map { max(0, $0) } ?? all.count
+        let shown = searching ? all.count : limit.map { max(0, $0) } ?? all.count
         recent = Array(all.prefix(shown))
         hidden = all.count - recent.count
     }
@@ -166,6 +181,34 @@ struct SidebarLayout {
     var running: [Session] { inApp + outside }
 
     var ordered: [Session] { running + favorites + recent }
+}
+
+struct RecentSearchField: View {
+    @Binding var text: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField(String(localized: "Search old chats by folder or description"), text: $text)
+                .textFieldStyle(.plain)
+                .onExitCommand { text = "" }
+            if !text.isEmpty {
+                Button { text = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.borderless)
+                .help(String(localized: "Clear the search"))
+                .accessibilityLabel(String(localized: "Clear the search"))
+            }
+        }
+        .font(.callout)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
+        .help(String(localized: "Finds old chats whose folder, title or prompts contain every word you type. Esc clears it."))
+    }
 }
 
 struct SidebarHeader: View {

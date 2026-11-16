@@ -309,3 +309,7 @@
 "One chat" = "Jeden czat";
 "%lld chats side by side" = "Obok siebie: %lld";
 "How many running chats to show side by side. Drag the borders between them to resize." = "Ile działających czatów pokazać obok siebie. Przeciągnij krawędzie między nimi, aby zmienić rozmiar.";
+"No old chats match" = "Żaden stary czat nie pasuje";
+"Search old chats by folder or description" = "Szukaj starych czatów po folderze lub opisie";
+"Clear the search" = "Wyczyść wyszukiwanie";
+"Finds old chats whose folder, title or prompts contain every word you type. Esc clears it." = "Znajduje stare czaty, których folder, tytuł lub polecenia zawierają każde wpisane słowo. Esc czyści pole.";

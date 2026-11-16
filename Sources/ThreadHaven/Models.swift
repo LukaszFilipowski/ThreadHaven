@@ -85,6 +85,21 @@ struct Session: Identifiable, Sendable {
         return project
     }
 
+    /// Every word of `query` must appear in the folder path, the title or a prompt of the chat.
+    /// Case and diacritics are ignored, so "zolw" finds "Żółw".
+    func matches(_ query: String) -> Bool {
+        let words = query.split(whereSeparator: \.isWhitespace).map { Self.fold(String($0)) }
+        guard !words.isEmpty else { return true }
+        let fields = [title, cwd, meta?.title, meta?.firstPrompt, meta?.lastPrompt, meta?.gitBranch].compactMap { $0 }.map(Self.fold)
+        return words.allSatisfy { word in fields.contains { $0.contains(word) } }
+    }
+
+    /// Lowercased, without diacritics; "ł" is a letter of its own in Unicode, so it is mapped by hand.
+    private static func fold(_ text: String) -> String {
+        text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
+            .replacingOccurrences(of: "ł", with: "l")
+    }
+
     var isEmpty: Bool {
         guard let meta else { return false }
         return meta.title == nil && meta.firstPrompt == nil && meta.lastPrompt == nil && meta.contextTokens == 0
