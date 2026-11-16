@@ -13,13 +13,9 @@ struct ContentView: View {
 
     private var filtered: [Session] {
         let all = store.sessions
-        let q = search.trimmingCharacters(in: .whitespaces).lowercased()
+        let q = search.trimmingCharacters(in: .whitespaces)
         guard !q.isEmpty else { return all }
-        return all.filter {
-            $0.title.lowercased().contains(q) || $0.cwd.lowercased().contains(q) || $0.id.lowercased().hasPrefix(q)
-                || ($0.meta?.lastPrompt?.lowercased().contains(q) ?? false)
-                || ($0.meta?.gitBranch?.lowercased().contains(q) ?? false)
-        }
+        return all.filter { $0.id.lowercased().hasPrefix(q.lowercased()) || $0.matches(q) }
     }
 
     private var selection: Set<String> { store.selection }

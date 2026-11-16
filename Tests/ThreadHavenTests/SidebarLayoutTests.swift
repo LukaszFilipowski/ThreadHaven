@@ -25,6 +25,21 @@ struct SidebarLayoutTests {
         #expect(layout.hidden == 2)
     }
 
+    @Test func recentSearchMatchesFolderAndDescriptionWithoutLimit() {
+        var sessions = (0..<40).map { session("s\($0)", "/dev/other", Double($0)) }
+        sessions.append(session("Żółw migracja bazy", "/Users/me/projects/cosmic-web", 100))
+        sessions.append(session("deploy", "/Users/me/projects/threadhaven", 200))
+        let byFolder = SidebarLayout(sessions: sessions, limit: 30, recentQuery: "Cosmic")
+        #expect(byFolder.recent.map(\.id) == ["Żółw migracja bazy"])
+        #expect(byFolder.hidden == 0)
+        #expect(byFolder.recentTotal == 42)
+        #expect(SidebarLayout(sessions: sessions, limit: 30, recentQuery: "zolw BAZY").recent.count == 1)
+        #expect(SidebarLayout(sessions: sessions, limit: 30, recentQuery: "threadhaven deploy").recent.map(\.id) == ["deploy"])
+        let none = SidebarLayout(sessions: sessions, limit: 30, recentQuery: "nothing-like-this")
+        #expect(none.recent.isEmpty && none.recentTotal == 42)
+        #expect(SidebarLayout(sessions: sessions, limit: 30, recentQuery: "  ").recent.count == 30)
+    }
+
     @Test func paneOrderKeepsExistingPanesInPlace() {
         let order = PaneGrid.order(["b", "a"], selection: ["a", "b", "c"], pending: [])
         #expect(order == ["b", "a", "c"])
