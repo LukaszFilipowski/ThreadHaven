@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.7] - 2026-11-16
+
 ### Added
 
 - A search field at the top of Recent finds old chats by folder or description (title, first or last prompt, branch). Every word you type must match, case and Polish letters do not matter ("zolw" finds "Żółw"), and it looks through all old chats, not only the ones shown. Esc or ✕ clears it
